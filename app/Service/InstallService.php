@@ -306,6 +306,7 @@ class InstallService
      */
     private function checkDatabaseConnection(array $config): bool
     {
+        $pdo = null;
         try {
             $dsn = sprintf(
                 'mysql:host=%s;port=%d',
@@ -323,6 +324,8 @@ class InstallService
             return true;
         } catch (\PDOException) {
             return false;
+        } finally {
+            $pdo = null;
         }
     }
 
