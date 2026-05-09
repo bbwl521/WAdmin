@@ -65,7 +65,7 @@ async function submit() {
     const welcomePath = settingStore.getSettings('welcomePage').path ?? null
     const redirect = router.currentRoute.value.query?.redirect ?? undefined
     if (userData) {
-      await router.push({ path: redirect ?? welcomePath ?? '/' })
+      await router.push({ path: redirect ?? welcomePath ?? '/dashboard/workbench' })
     }
     isFormSubmit.value = false
   }).catch(() => isFormSubmit.value = false)
