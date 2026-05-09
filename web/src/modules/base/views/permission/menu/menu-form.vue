@@ -186,7 +186,6 @@ const formItems = ref<MaFormItem[]>([
       prepend: () => (
         <ElSelect v-model={form.value.meta.componentPath} class="w-150px">
           <ElOption label="src/modules/" value="modules/" />
-          <ElOption label="src/plugins/" value="plugins/" />
         </ElSelect>
       ),
       append: () => (

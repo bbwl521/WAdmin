@@ -99,6 +99,24 @@ final class UserSchema implements \JsonSerializable
 
     public function jsonSerialize(): mixed
     {
-        return ['id' => $this->id, 'username' => $this->username, 'user_type' => $this->userType, 'nickname' => $this->nickname, 'phone' => $this->phone, 'email' => $this->email, 'avatar' => $this->avatar, 'signed' => $this->signed, 'status' => $this->status, 'login_ip' => $this->loginIp, 'login_time' => $this->loginTime, 'backend_setting' => $this->backendSetting, 'created_by' => $this->createdBy, 'updated_by' => $this->updatedBy, 'created_at' => $this->createdAt, 'updated_at' => $this->updatedAt, 'remark' => $this->remark];
+        return [
+            'id' => $this->id,
+            'username' => $this->username,
+            'user_type' => $this->userType instanceof \BackedEnum ? $this->userType->value : $this->userType,
+            'nickname' => $this->nickname,
+            'phone' => $this->phone,
+            'email' => $this->email,
+            'avatar' => $this->avatar,
+            'signed' => $this->signed,
+            'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,
+            'login_ip' => $this->loginIp,
+            'login_time' => $this->loginTime,
+            'backend_setting' => $this->backendSetting,
+            'created_by' => $this->createdBy,
+            'updated_by' => $this->updatedBy,
+            'created_at' => $this->createdAt,
+            'updated_at' => $this->updatedAt,
+            'remark' => $this->remark,
+        ];
     }
 }

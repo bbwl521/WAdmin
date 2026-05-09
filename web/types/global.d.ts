@@ -64,66 +64,6 @@ declare namespace Resources {
   }
 }
 
-declare namespace Plugin {
-
-  /**
-   * 插件基础信息
-   */
-  interface Info {
-    name: string
-    version: string
-    author: string
-    description: string
-    order?: number
-  }
-
-  interface Config {
-    /**
-     * 插件信息
-     */
-    info: Info
-    /**
-     * 是否开启插件
-     */
-    enable: boolean
-  }
-
-  interface Views extends Route.RouteRecordRaw {}
-
-  interface PluginConfig {
-    install: (app: App) => void
-    config: Config
-    views?: Views[]
-    /**
-     * 插件hooks
-     * 插件禁用时，定义的hook不会被触发
-     */
-    hooks?: {
-      // 插件启动时触发，比如可以设置 enable = false，阻止插件启动
-      start?: (config: Config) => any | void
-      // 插件在系统初始化完毕后触发，可调用Vue的上下文、inject等服务
-      setup?: () => any | void
-      // 注册路由时触发，可以对路由进行所有操作
-      registerRoute?: (router: Router, routesRaw: Route.RouteRecordRaw[] | Plugin.Views[] | MineRoute.routeRecord[]) => any | void
-      // 登录前时触发，用于处理提交的数据
-      loginBefore?: (data: Record<string, any>) => any | void
-      // 登录时触发
-      login?: (formInfo: any) => any | void
-      // 退出登录时触发
-      logout?: () => any | void
-      // 获取用户信息时触发
-      getUserInfo?: (userInfo: any) => any | void
-      // 路由跳转时钩子，外链形式路由不生效
-      routerRedirect?: ({ oldRoute: RouteRecordRaw, newRoute: RouteRecordRaw }, router: Router) => any | void
-      // 网络请求时钩子
-      networkRequest?: (request: T) => any | void
-      // 网络返回后钩子
-      networkResponse?: (response: T) => any | void
-    }
-    [key: string]: T
-  }
-}
-
 declare namespace SystemSettings {
   type settingType = 'app' | 'welcomePage' | 'mainAside' | 'subAside' | 'tabbar' | 'toolBars' | 'copyright'
   // 应用属性

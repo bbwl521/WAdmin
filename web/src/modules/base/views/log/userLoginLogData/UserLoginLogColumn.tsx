@@ -28,11 +28,15 @@ export default function getColumns(t: any): MaProTableColumns[] {
     { label: () => t('baseLoginLog.ip'), prop: 'ip' },
     { label: () => t('baseLoginLog.browser'), prop: 'browser' },
     { label: () => t('baseLoginLog.status'), prop: 'status',
-      cellRender: ({ row }) => (
-        <ElTag type={dictStore.t('system-state', row.status, 'color')}>
-          {t(dictStore.t('system-state', row.status, 'i18n'))}
-        </ElTag>
-      ),
+      cellRender: ({ row }) => {
+        const i18nKey = dictStore.t('system-state', row.status, 'i18n')
+        const color = dictStore.t('system-state', row.status, 'color')
+        return (
+          <ElTag type={color || 'info'}>
+            {i18nKey ? t(i18nKey) : row.status}
+          </ElTag>
+        )
+      },
     },
     { label: () => t('baseLoginLog.login_time'), prop: 'login_time' },
     // 操作列

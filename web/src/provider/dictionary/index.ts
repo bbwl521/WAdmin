@@ -14,11 +14,12 @@ import type { App } from 'vue'
 const dictionary: Record<string, Dictionary[]> = {}
 async function getDictionary() {
   const data = import.meta.glob('./data/**.{ts,js}')
-  const pluginData = import.meta.glob('../../plugins/*/*/dictionary/**.{ts,js}')
-  const allData = { ...data, ...pluginData }
+  const allData = { ...data }
   for (const dic in allData) {
     const d: any = await allData[dic]()
-    const name: string | undefined = dic.match(/\/(data|plugins\/.*\/dictionary)\/(.*)\.(ts|js)/)?.[2] ?? undefined
+    // 修复正则表达式：提取 /data/ 和 .(ts|js) 之间的部分
+    const match = dic.match(/\/data\/([^/]+)\.(ts|js)$/)
+    const name = match ? match[1] : undefined
     if (name) {
       dictionary[name] = d.default
     }

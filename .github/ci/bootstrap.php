@@ -12,7 +12,6 @@ declare(strict_types=1);
 use Hyperf\Contract\ApplicationInterface;
 use Hyperf\Di\ClassLoader;
 use Hyperf\Di\ScanHandler\ProcScanHandler;
-use Mine\AppStore\Plugin;
 
 /*
  * This file is part of MineAdmin.
@@ -35,7 +34,6 @@ date_default_timezone_set('Asia/Shanghai');
 
 require BASE_PATH . '/vendor/autoload.php';
 
-Plugin::init();
 ClassLoader::init(handler: new ProcScanHandler());
 
 $container = require BASE_PATH . '/config/container.php';

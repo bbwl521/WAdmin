@@ -62,12 +62,10 @@ const useMenuStore = defineStore(
 
       watch((): any => route.name, async (newName: string, oldName: string) => {
         setTopMenu()
-        const newRoute = router.getRoutes().find((route: any): boolean => route.name === newName)
-        const oldRoute = router.getRoutes().find((route: any): boolean => route.name === oldName)
+        const _newRoute = router.getRoutes().find((route: any): boolean => route.name === newName)
+        const _oldRoute = router.getRoutes().find((route: any): boolean => route.name === oldName)
 
         settingStore.setTitle(route?.meta?.i18n ? t(route.meta.i18n as string) : route.meta.title as string)
-
-        await usePluginStore().callHooks('routerRedirect', { oldRoute, newRoute }, router)
       }, { deep: true })
 
       watch((): any => activeTopMenu.value, (newActiveTopMenu: MineRoute.routeRecord) => {

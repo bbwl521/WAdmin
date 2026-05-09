@@ -119,20 +119,6 @@ export default defineComponent ({
                 'ml-1.5': showMineHeader(),
               }}
             >
-              {
-                router.hasRoute('MineAppStoreRoute')
-                && (
-                  <m-tooltip text={useTrans('menu.appstore')} placement="right">
-                    <a
-                      class="h-14 flex cursor-pointer items-center justify-center"
-                      onClick={() => router.push({ path: '/appstore' })}
-                      title={useTrans('menu.appstore')}
-                    >
-                      <ma-svg-icon name="vscode-icons:file-type-azure" size={30} />
-                    </a>
-                  </m-tooltip>
-                )
-              }
               { isMixedLayout() && (
                 <m-tooltip text={useTrans(getUserBarState() ? 'mineAdmin.userBar.hideState' : 'mineAdmin.userBar.showState')}>
                   <div

@@ -144,10 +144,12 @@ const schema = ref<MaProTableSchema>({
         if (!row.policy) {
           return '-'
         }
+        const i18nKey = dictStore.t('data-scope', row.policy.policy_type, 'i18n')
+        const color = dictStore.t('data-scope', row.policy.policy_type, 'color')
         return h(
           ElTag,
-          { type: dictStore.t('data-scope', row.policy.policy_type, 'color') },
-          t(dictStore.t('data-scope', row.policy.policy_type, 'i18n')),
+          { type: color || 'info' },
+          i18nKey ? t(i18nKey) : row.policy.policy_type,
         )
       },
     },

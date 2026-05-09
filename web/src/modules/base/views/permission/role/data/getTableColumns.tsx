@@ -37,11 +37,15 @@ export default function getTableColumns(dialog: UseDialogExpose, formRef: any, t
     { label: () => t('baseRoleManage.name'), prop: 'name' },
     { label: () => t('baseRoleManage.code'), prop: 'code' },
     { label: () => t('crud.status'), prop: 'status',
-      cellRender: ({ row }) => (
-        <ElTag type={dictStore.t('system-status', row.status, 'color')}>
-          {t(dictStore.t('system-status', row.status, 'i18n'))}
-        </ElTag>
-      ),
+      cellRender: ({ row }) => {
+        const i18nKey = dictStore.t('system-status', row.status, 'i18n')
+        const color = dictStore.t('system-status', row.status, 'color')
+        return (
+          <ElTag type={color || 'info'}>
+            {i18nKey ? t(i18nKey) : row.status}
+          </ElTag>
+        )
+      },
     },
 
     // 操作列

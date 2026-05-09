@@ -14,7 +14,6 @@ use Hyperf\Contract\ApplicationInterface;
 use Hyperf\Di\ClassLoader;
 use Hyperf\Di\ScanHandler\ProcScanHandler;
 use Hyperf\Engine\DefaultOption;
-use Mine\AppStore\Plugin;
 use Psr\Container\ContainerInterface;
 
 ini_set('display_errors', 'on');
@@ -31,7 +30,6 @@ require BASE_PATH . '/vendor/autoload.php';
 
 // Self-called anonymous function that creates its own scope and keep the global namespace clean.
 (function () {
-    Plugin::init();
     ClassLoader::init(handler: new ProcScanHandler());
     /** @var ContainerInterface $container */
     $container = require BASE_PATH . '/config/container.php';

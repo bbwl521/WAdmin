@@ -103,15 +103,14 @@ function registerDirectives(app: App) {
 }
 
 async function bootstrap(app: App): Promise<void> {
-  await initProvider(app)
   app.use(pinia)
+  await initProvider(app)
   app.use(router)
   app.use(ElementPlus, {})
   registerDirectives(app)
-  otherWorker(app)
   await createI18nService(app)
-  await usePluginStore().registerPlugin(app)
   await router.isReady()
+  otherWorker(app)
   useThemeColor().initThemeColor()
 }
 

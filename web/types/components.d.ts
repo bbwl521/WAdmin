@@ -8,7 +8,13 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    Button: typeof import('./../src/components/mine-basic-ui/button/index.vue')['default']
+    Divider: typeof import('./../src/components/mine-basic-ui/dropdown/divider.vue')['default']
+    Drawer: typeof import('./../src/components/mine-basic-ui/drawer/index.vue')['default']
+    Dropdown: typeof import('./../src/components/mine-basic-ui/dropdown/index.vue')['default']
     Form: typeof import('./../src/components/ma-key-value/components/form.vue')['default']
+    Input: typeof import('./../src/components/mine-basic-ui/input/index.vue')['default']
+    Item: typeof import('./../src/components/mine-basic-ui/dropdown/item.vue')['default']
     MaAuth: typeof import('./../src/components/ma-auth/index.vue')['default']
     MaCitySelect: typeof import('./../src/components/ma-city-select/index.vue')['default']
     MaColCard: typeof import('./../src/components/ma-col-card/index.vue')['default']
@@ -29,8 +35,13 @@ declare module 'vue' {
     MaUploadFile: typeof import('./../src/components/ma-upload-file/index.vue')['default']
     MaUploadImage: typeof import('./../src/components/ma-upload-image/index.vue')['default']
     MaVerifyCode: typeof import('./../src/components/ma-verify-code/index.vue')['default']
+    Modal: typeof import('./../src/components/mine-basic-ui/modal/index.vue')['default']
     Panel: typeof import('./../src/components/ma-resource-picker/panel.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Switch: typeof import('./../src/components/mine-basic-ui/switch/index.vue')['default']
+    Tab: typeof import('./../src/components/mine-basic-ui/tab/index.vue')['default']
+    Textarea: typeof import('./../src/components/mine-basic-ui/textarea/index.vue')['default']
+    Tooltip: typeof import('./../src/components/mine-basic-ui/tooltip/index.vue')['default']
   }
 }

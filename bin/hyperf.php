@@ -1,8 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-use Mine\AppStore\Plugin;
-
 ini_set('display_errors', 'on');
 ini_set('display_startup_errors', 'on');
 ini_set('memory_limit', '1G');
@@ -18,7 +16,6 @@ require BASE_PATH . '/vendor/autoload.php';
 
 // Self-called anonymous function that creates its own scope and keep the global namespace clean.
 (function () {
-    Plugin::init();
     Hyperf\Di\ClassLoader::init();
     /** @var Psr\Container\ContainerInterface $container */
     $container = require BASE_PATH . '/config/container.php';

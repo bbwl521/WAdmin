@@ -108,14 +108,12 @@ const useUserStore = defineStore(
     }
 
     async function login(data: { username: string, password: string, code: string, [key: string]: any }) {
-      await usePluginStore().callHooks('loginBefore', data)
       return new Promise((resolve, reject) => {
         loginApi(data).then(async (res) => {
           token.value = res.data.access_token
           cache.set('token', res.data.access_token)
           cache.set('expire', useDayjs().unix() + res.data.expire_at, { exp: res.data.expire_at })
           cache.set('refresh_token', res.data.refresh_token)
-          await usePluginStore().callHooks('login', { username: data.username, ...res.data })
           resolve(res.data)
         }).catch((error) => {
           reject(error)
@@ -138,7 +136,6 @@ const useUserStore = defineStore(
         const codes: string[] = recursionGetKey(getMenu(), 'name')
         getRoles().includes('SuperAdmin') && codes.unshift('*')
         setPermissions(codes)
-        await usePluginStore().callHooks('getUserInfo', data)
       }
       // eslint-disable-next-line unused-imports/no-unused-vars
       catch (e) {
@@ -147,7 +144,6 @@ const useUserStore = defineStore(
     }
 
     async function logout(redirect = router.currentRoute.value.fullPath) {
-      await usePluginStore().callHooks('logout')
       useTabStore().clearTab()
       clearInfo()
       await router.push({

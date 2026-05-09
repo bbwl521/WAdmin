@@ -31,7 +31,6 @@ export default defineComponent({
       attrsMerged.value.locale = locales[lang]
     }, { immediate: true })
 
-    onMounted(async () => await usePluginStore().callHooks('setup'))
     return () => (
       <el-config-provider {...attrsMerged.value}>
         {slots.default?.()}

@@ -30,8 +30,12 @@ const msg = useMessage()
 
 useForm('departmentForm').then((form: MaFormExpose) => {
   if (formType === 'edit' && data) {
-    Object.keys(data).map((key: string) => {
-      deptModel.value[key] = data[key]
+    // 只复制部门基本信息字段，排除关联数据
+    const fieldsToCopy = ['id', 'name', 'parent_id', 'remark']
+    fieldsToCopy.forEach((key) => {
+      if (data[key] !== undefined) {
+        deptModel.value[key] = data[key]
+      }
     })
   }
   form.setItems(getFormItems(formType, t, deptModel.value, msg))

@@ -47,7 +47,6 @@ http.interceptors.request.use(
       }, config.headers)
     }
 
-    await usePluginStore().callHooks('networkRequest', config)
     return config
   },
 )
@@ -58,7 +57,6 @@ http.interceptors.response.use(
   async (response: AxiosResponse): Promise<any> => {
     isLoading.value = false
     const userStore = useUserStore()
-    await usePluginStore().callHooks('networkResponse', response)
     const config = response.config
 
     if (response.request.responseType === 'blob' || response.request.responseType === 'arraybuffer') {

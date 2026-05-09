@@ -1,4 +1,4 @@
-import type { Plugin, SystemSettings } from '#/global'
+import type { SystemSettings } from '#/global'
 /**
  * MineAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
@@ -11,7 +11,6 @@ import type { Plugin, SystemSettings } from '#/global'
 import type { Router, RouteRecordRaw } from 'vue-router'
 import dashboardRoute from '@/router/static-routes/dashboardRoute'
 import welcomeRoute from '@/router/static-routes/welcomeRoute'
-import usePluginStore from '@/store/modules/usePluginStore.ts'
 
 const useRouteStore = defineStore(
   'useRouteStore',
@@ -36,18 +35,6 @@ const useRouteStore = defineStore(
       })
       flatteningRoutesList.value = flatteningRoutes(routes)
       flatteningRoutesList.value.map((routeItem: RouteRecordRaw) => router.addRoute('MineRootLayoutRoute', routeItem))
-      const plugins = usePluginStore().getPluginConfig() as { [ key: string ]: Plugin.PluginConfig }
-      Object.keys(plugins).map((name: string) => {
-        const plugin = plugins[name] as Plugin.PluginConfig
-        if (plugin.config?.enable === true && plugin?.views) {
-          plugin.views.map((item: Plugin.Views) => {
-            const route = toRecordRawRoute(item)
-            MineRootLayoutRoute.children?.push(route)
-            router.addRoute('MineRootLayoutRoute', route)
-          })
-        }
-      })
-      await usePluginStore().callHooks('registerRoute', router, routesRaw.value)
     }
 
     function getMineRootLayoutRoute(): RouteRecordRaw {
@@ -120,7 +107,6 @@ const useRouteStore = defineStore(
     }
 
     const moduleViews = import.meta.glob('../../modules/**/views/**/**.{vue,jsx,tsx}')
-    const pluginViews = import.meta.glob('../../plugins/*/**/views/**/**.{vue,jsx,tsx}')
 
     /**
      * 菜单转路由
@@ -141,9 +127,6 @@ const useRouteStore = defineStore(
           if (item.component && item.meta?.type !== 'I') {
             if (moduleViews[`../../modules/${item.component}${suffix}`]) {
               component = moduleViews[`../../modules/${item.component}${suffix}`]
-            }
-            else if (pluginViews[`../../plugins/${item.component}${suffix}`]) {
-              component = pluginViews[`../../plugins/${item.component}${suffix}`]
             }
             else {
               // console.warn(`MineAdmin-UI: 路由 [${item.meta.title}] 找不到 ${item.component}${suffix} 页面`)

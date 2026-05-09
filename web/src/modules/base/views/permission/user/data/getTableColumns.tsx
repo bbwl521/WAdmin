@@ -46,20 +46,28 @@ export default function getTableColumns(dialog: UseDialogExpose, formRef: any, t
     { label: () => t('baseUserManage.username'), prop: 'username' },
     { label: () => t('baseUserManage.nickname'), prop: 'nickname' },
     { label: () => t('baseUserManage.userType'), prop: 'user_type',
-      cellRender: ({ row }) => (
-        <ElTag type={dictStore.t('base-userType', row.user_type, 'color')}>
-          {t(dictStore.t('base-userType', row.user_type, 'i18n'))}
-        </ElTag>
-      ),
+      cellRender: ({ row }) => {
+        const i18nKey = dictStore.t('base-userType', row.user_type, 'i18n')
+        const color = dictStore.t('base-userType', row.user_type, 'color')
+        return (
+          <ElTag type={color || 'info'}>
+            {i18nKey ? t(i18nKey) : row.user_type}
+          </ElTag>
+        )
+      },
     },
     { label: () => t('baseUserManage.phone'), prop: 'phone' },
     { label: () => t('baseUserManage.email'), prop: 'email' },
     { label: () => t('crud.status'), prop: 'status',
-      cellRender: ({ row }) => (
-        <ElTag type={dictStore.t('system-status', row.status, 'color')}>
-          {t(dictStore.t('system-status', row.status, 'i18n'))}
-        </ElTag>
-      ),
+      cellRender: ({ row }) => {
+        const i18nKey = dictStore.t('system-status', row.status, 'i18n')
+        const color = dictStore.t('system-status', row.status, 'color')
+        return (
+          <ElTag type={color || 'info'}>
+            {i18nKey ? t(i18nKey) : row.status}
+          </ElTag>
+        )
+      },
     },
     // 操作列
     {
