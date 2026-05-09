@@ -16,6 +16,7 @@ use App\Http\Common\Result;
 use App\Http\Common\ResultCode;
 use Hyperf\HttpMessage\Exception\NotFoundHttpException;
 use HyperfContext\RequestContext;
+use Hyperf\Di\Container;
 
 final class NotFoundHttpExceptionHandler extends AbstractHandler
 {
@@ -35,9 +36,14 @@ final class NotFoundHttpExceptionHandler extends AbstractHandler
         }
 
         // 记录到日志
-        $this->container->get(\Hyperf\Contract\StdoutLoggerInterface::class)->warning(
-            sprintf('404 Not Found: %s', $path)
-        );
+        try {
+            $container = Container::getInstance();
+            $container->get(\Hyperf\Contract\StdoutLoggerInterface::class)->warning(
+                sprintf('404 Not Found: %s', $path)
+            );
+        } catch (\Throwable $e) {
+            // 忽略日志记录错误
+        }
 
         return new Result(
             code: ResultCode::NOT_FOUND,
