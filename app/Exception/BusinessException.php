@@ -21,6 +21,7 @@ class BusinessException extends \RuntimeException
 
     public function __construct(ResultCode $code = ResultCode::FAIL, ?string $message = null, mixed $data = [])
     {
+        parent::__construct($message ?? $code->getMessage());
         $this->response = new Result($code, $message, $data);
     }
 

@@ -124,22 +124,22 @@ declare namespace SystemSettings {
   }
   interface welcomePage {
     /**
-     * 欢迎页默认地址
-     * @默认值 `'/welcome'`
+     * 默认首页地址
+     * @默认值 `'/dashboard/workbench'`
      */
     path?: string
     /**
-     * 欢迎页路由名称
-     * @默认值 `'welcome'`
+     * 首页路由名称
+     * @默认值 `'workbench'`
      */
     name?: string
     /**
-     * 欢迎页默认名称
-     * @默认值 `'欢迎页'`
+     * 首页默认名称
+     * @默认值 `'工作台'`
      */
     title?: string
     /**
-     * 欢迎页图标
+     * 首页图标
      */
     icon?: string
   }

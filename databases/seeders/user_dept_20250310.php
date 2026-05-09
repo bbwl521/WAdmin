@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  root@imoi.cn
  * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
  */
+namespace Database\Seeders;
 
 use App\Model\Permission\Menu;
 use Hyperf\Database\Seeders\Seeder;
@@ -23,7 +24,7 @@ class UserDept20250310 extends Seeder
         $parent = Menu::where('name','permission')->firstOrFail();
         $now = Menu::create([
             'name'  =>  'permission:department',
-            'path'  =>  '/permission/departments',
+            'path'  =>  '/permission/department',
             'parent_id' => $parent->id,
             'component' => 'base/views/permission/department/index',
             'meta'  =>  [
@@ -72,7 +73,7 @@ class UserDept20250310 extends Seeder
         foreach ($children as $child => $title) {
             Menu::create([
                 'name'  =>  $child,
-                'path'  =>  '/permission/departments',
+                'path'  =>  '/permission/department',
                 'meta'  =>  [
                     'title' => $title,
                     'type' => 'B',

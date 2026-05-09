@@ -12,14 +12,76 @@ declare(strict_types=1);
 use Hyperf\HttpMessage\Stream\SwooleFileStream;
 use Hyperf\HttpMessage\Stream\SwooleStream;
 use Hyperf\HttpServer\Router\Router;
+use Hyperf\Context\ApplicationContext;
 use Psr\Http\Message\ResponseInterface;
+use App\Http\Common\Result;
+use App\Exception\BusinessException;
 
 Router::get('/', static function () {
+    // Check if system is installed
+    $envFile = BASE_PATH . '/.env';
+    $installed = false;
+
+    if (file_exists($envFile)) {
+        $content = file_get_contents($envFile);
+        $installed = $content !== false && str_contains($content, 'JWT_SECRET');
+    }
+
+    if (! $installed) {
+        $stream = new SwooleFileStream(BASE_PATH . '/public/install.html');
+        return (new \Hyperf\HttpMessage\Server\Response())
+            ->withHeader('Content-Type', 'text/html; charset=utf-8')
+            ->withBody($stream);
+    }
+
     return 'welcome use mineAdmin';
+});
+
+Router::get('/install', static function () {
+    $stream = new SwooleFileStream(BASE_PATH . '/public/install.html');
+    return (new \Hyperf\HttpMessage\Server\Response())
+        ->withHeader('Content-Type', 'text/html; charset=utf-8')
+        ->withBody($stream);
 });
 
 Router::get('/favicon.ico', static function () {
     return '';
+});
+
+Router::get('/admin/install/status', static function () {
+    $container = ApplicationContext::getContainer();
+    $controller = $container->get(\App\Http\Admin\Controller\InstallController::class);
+    return $controller->status();
+});
+
+Router::get('/admin/install/check', static function () {
+    $container = ApplicationContext::getContainer();
+    $controller = $container->get(\App\Http\Admin\Controller\InstallController::class);
+    return $controller->check();
+});
+
+Router::get('/admin/install/databases', static function () {
+    $container = ApplicationContext::getContainer();
+    $controller = $container->get(\App\Http\Admin\Controller\InstallController::class);
+    return $controller->getDatabases();
+});
+
+Router::post('/admin/install/test-connection', static function () {
+    $container = ApplicationContext::getContainer();
+    $controller = $container->get(\App\Http\Admin\Controller\InstallController::class);
+    return $controller->testConnection();
+});
+
+Router::post('/admin/install', static function () {
+    $container = ApplicationContext::getContainer();
+    $controller = $container->get(\App\Http\Admin\Controller\InstallController::class);
+    return $controller->install();
+});
+
+Router::get('/admin/install/env-check', static function () {
+    $container = ApplicationContext::getContainer();
+    $controller = $container->get(\App\Http\Admin\Controller\InstallController::class);
+    return $controller->steps();
 });
 
 // 处理静态文件请求

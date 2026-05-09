@@ -27,9 +27,9 @@ const defaultGlobalConfigSettings: RecursiveRequired<SystemSettings.all> = {
     watermarkText: import.meta.env.VITE_APP_TITLE,
   },
   welcomePage: {
-    name: 'welcome',
-    path: '/welcome',
-    title: '欢迎页',
+    name: 'workbench',
+    path: '/dashboard/workbench',
+    title: '工作台',
     icon: 'icon-park-outline:jewelry',
   },
   mainAside: {

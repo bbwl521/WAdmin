@@ -18,7 +18,7 @@ export default defineComponent({
     const userStore = useUserStore()
     const userInfo = userStore.getUserInfo()
     const route = useRoute()
-    const welcomeRoute = ref<string>(useSettingStore().getSettings('app')?.welcomePage?.path ?? '/welcome')
+    const welcomeRoute = ref<string>(useSettingStore().getSettings('app')?.welcomePage?.path ?? '/dashboard/workbench')
     const menuRender = () => (
       <>
         {ucChildren.map((item: any) => (

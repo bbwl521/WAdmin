@@ -86,8 +86,13 @@
   },
   "autoload": {
     "psr-4": {
-      "App\\": "app/"
-    }
+      "App\\": "app/",
+      "Database\\": "databases/"
+    },
+    "classmap": [
+      "databases/Seeders/",
+      "databases/Migrations/"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
@@ -97,7 +102,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "config": {
-    "optimize-autoloader": true,
+    "optimize-autoloader": false,
     "sort-packages": true
   },
   "extra": {

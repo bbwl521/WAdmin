@@ -19,7 +19,7 @@ return [
         // jwt 配置 https://lcobucci-jwt.readthedocs.io/en/latest/
         'driver' => Jwt::class,
         // jwt 签名key
-        'key' => InMemory::base64Encoded(env('JWT_SECRET')),
+        'key' => InMemory::base64Encoded(env('JWT_SECRET', 'dW5kZWZpbmVkLWp3dC1zZWNyZXQtaW4taW5zdGFsbC1wcm9jZXNz')),
         // jwt 签名算法 可选 https://lcobucci-jwt.readthedocs.io/en/latest/supported-algorithms/
         'alg' => new Sha256(),
         // token过期时间，单位为秒

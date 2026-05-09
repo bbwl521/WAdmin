@@ -10,7 +10,6 @@ import type { SystemSettings } from '#/global'
  */
 import type { Router, RouteRecordRaw } from 'vue-router'
 import dashboardRoute from '@/router/static-routes/dashboardRoute'
-import welcomeRoute from '@/router/static-routes/welcomeRoute'
 
 const useRouteStore = defineStore(
   'useRouteStore',
@@ -45,20 +44,6 @@ const useRouteStore = defineStore(
         component: () => import('@/layouts'),
         redirect: welcomePage.path,
         children: [
-          Object.assign(welcomeRoute, {
-            name: welcomePage.name,
-            path: welcomePage.path,
-            meta: {
-              title: welcomePage.title,
-              i18n: 'menu.welcome',
-              icon: welcomePage.icon,
-              type: 'M',
-              affix: true,
-              breadcrumbEnable: true,
-              copyright: true,
-              cache: true,
-            },
-          }),
           toRecordRawRoute(dashboardRoute),
           toRecordRawRoute({
             path: '/:pathMatch(.*)*',
