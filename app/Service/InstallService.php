@@ -614,6 +614,11 @@ class InstallService
      */
     public function install(array $config, array $options = []): array
     {
+        // 检查系统是否已安装，防止重复安装
+        if ($this->isInstalled()) {
+            throw new BusinessException(ResultCode::FAIL, '系统已安装，如需重新安装请先重置安装状态');
+        }
+
         // 获取安装锁
         if (! $this->progressTracker->acquireLock()) {
             throw new BusinessException(ResultCode::FAIL, '安装进程已被锁定，请稍后重试');
