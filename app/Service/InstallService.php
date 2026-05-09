@@ -54,22 +54,31 @@ class InstallService
      */
     public function isInstalled(): bool
     {
-        $envFile = BASE_PATH . '/.env';
-        if (! file_exists($envFile)) {
-            return false;
+        return file_exists($this->getInstallLockFile());
+    }
+
+    /**
+     * 获取安装锁文件路径
+     */
+    private function getInstallLockFile(): string
+    {
+        return BASE_PATH . '/install.lock';
+    }
+
+    /**
+     * 创建安装锁文件
+     */
+    private function createInstallLock(): void
+    {
+        $lockFile = $this->getInstallLockFile();
+        $content = json_encode([
+            'installed_at' => date('Y-m-d H:i:s'),
+            'version' => '1.0.0',
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        if (file_put_contents($lockFile, $content) === false) {
+            throw new BusinessException(ResultCode::FAIL, '无法创建安装锁文件');
         }
-
-        $envContent = file_get_contents($envFile);
-        if (empty($envContent)) {
-            return false;
-        }
-
-        $config = $this->parseEnv($envContent);
-
-        return ! empty($config['DB_DATABASE'])
-            && ! empty($config['DB_HOST'])
-            && ! empty($config['DB_USERNAME'])
-            && $this->checkDatabaseConnection($config);
     }
 
     /**
@@ -78,7 +87,7 @@ class InstallService
     public function getInstallStatus(): array
     {
         $status = [
-            'installed' => false,
+            'installed' => $this->isInstalled(),
             'env_exists' => false,
             'db_configured' => false,
             'db_connected' => false,
@@ -99,8 +108,6 @@ class InstallService
 
                 if ($this->checkDatabaseConnection($config)) {
                     $status['db_connected'] = true;
-                    $status['installed'] = true;
-                    $status['message'] = 'System is installed';
 
                     try {
                         $tables = Db::select('SHOW TABLES');
@@ -685,6 +692,9 @@ class InstallService
                 '系统安装完成！'
             );
 
+            // 创建安装锁文件
+            $this->createInstallLock();
+
             $result['success'] = true;
             $result['progress'] = $this->progressTracker->getProgress();
             $result['logs'] = $this->progressTracker->getLogs();
@@ -821,6 +831,12 @@ class InstallService
      */
     public function resetInstall(): void
     {
+        // 删除安装锁文件
+        $lockFile = $this->getInstallLockFile();
+        if (file_exists($lockFile)) {
+            unlink($lockFile);
+        }
+
         $this->progressTracker->reset();
     }
 }
