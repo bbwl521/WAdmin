@@ -21,18 +21,24 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-    public function run(?string $adminUsername = null, ?string $adminPassword = null): void
+    public function run(?string $adminUsername = null, ?string $adminPassword = null): array
     {
-        $this->seedAdminUser($adminUsername, $adminPassword);
+        $userId = $this->seedAdminUser($adminUsername, $adminPassword);
         $this->seedMenus();
         $this->seedRoles();
-        $this->seedRolePermissions();
+        $this->seedRolePermissions($userId ?? 1);
+
+        return [
+            'username' => $adminUsername ?: 'admin',
+            'user_id' => $userId,
+        ];
     }
 
     /**
      * Seed admin user.
+     * @return int The ID of the created user
      */
-    public function seedAdminUser(?string $username = null, ?string $password = null): void
+    public function seedAdminUser(?string $username = null, ?string $password = null): int
     {
         $table = 'user';
         Db::table($table)->truncate();
@@ -41,10 +47,9 @@ class DatabaseSeeder extends Seeder
         $username = $username ?: 'admin';
         $password = $password ?: '123456';
 
-        // 创建 admin 用户
+        // 创建管理员用户
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        Db::table($table)->insert([
-            'id' => 1,
+        $userId = Db::table($table)->insertGetId([
             'username' => $username,
             'password' => $hashedPassword,
             'user_type' => '100',
@@ -58,6 +63,9 @@ class DatabaseSeeder extends Seeder
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
+
+        // 返回用户ID供后续使用（用于用户-角色关联）
+        return $userId;
     }
 
     /**
@@ -95,7 +103,7 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed role permissions (user-role and role-menu).
      */
-    private function seedRolePermissions(): void
+    private function seedRolePermissions(int $userId = 1): void
     {
         $userBelongsRoleTable = 'user_belongs_role';
         $roleBelongsMenuTable = 'role_belongs_menu';
@@ -103,9 +111,9 @@ class DatabaseSeeder extends Seeder
         Db::table($userBelongsRoleTable)->truncate();
         Db::table($roleBelongsMenuTable)->truncate();
 
-        // 关联 admin 用户到 SuperAdmin 角色
+        // 关联用户到 SuperAdmin 角色
         Db::table($userBelongsRoleTable)->insert([
-            'user_id' => 1,
+            'user_id' => $userId,
             'role_id' => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),

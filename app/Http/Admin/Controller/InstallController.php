@@ -12,20 +12,16 @@ declare(strict_types=1);
 
 namespace App\Http\Admin\Controller;
 
-use App\Http\Admin\Request\InstallRequest;
 use App\Http\Common\Controller\AbstractController;
 use App\Http\Common\Result;
 use App\Service\InstallService;
-use Hyperf\HttpServer\Annotation\Controller;
-use Hyperf\HttpServer\Annotation\GetMapping;
-use Hyperf\HttpServer\Annotation\PostMapping;
 use Hyperf\HttpServer\Contract\RequestInterface;
-use Hyperf\Swagger\Annotation as OA;
 use Hyperf\Swagger\Annotation\Get;
+use Hyperf\Swagger\Annotation\HyperfServer;
 use Hyperf\Swagger\Annotation\Post;
+use Mine\Swagger\Attributes\ResultResponse;
 
-#[Controller(prefix: '/admin/install', server: 'http')]
-#[OA\HyperfServer(name: 'http')]
+#[HyperfServer(name: 'http')]
 class InstallController extends AbstractController
 {
     public function __construct(
@@ -34,20 +30,23 @@ class InstallController extends AbstractController
     ) {}
 
     #[Get(
-        path: '/status',
+        path: '/admin/install/status',
         operationId: 'getInstallStatus',
-        summary: 'Get installation status',
+        summary: '获取安装状态',
+        security: [],
         tags: ['admin:install']
     )]
+    #[ResultResponse(instance: \App\Http\Common\Result::class)]
     public function status(): Result
     {
         return $this->success($this->installService->getInstallStatus());
     }
 
     #[Get(
-        path: '/check',
+        path: '/admin/install/check',
         operationId: 'checkInstalled',
-        summary: 'Check if system is installed',
+        summary: '检查系统是否已安装',
+        security: [],
         tags: ['admin:install']
     )]
     public function check(): Result
@@ -58,9 +57,10 @@ class InstallController extends AbstractController
     }
 
     #[Get(
-        path: '/steps',
+        path: '/admin/install/steps',
         operationId: 'getInstallSteps',
-        summary: 'Get installation steps',
+        summary: '获取安装步骤',
+        security: [],
         tags: ['admin:install']
     )]
     public function steps(): Result
@@ -68,10 +68,40 @@ class InstallController extends AbstractController
         return $this->success($this->installService->getInstallSteps());
     }
 
+    #[Get(
+        path: '/admin/install/env-check',
+        operationId: 'checkEnvironment',
+        summary: '执行环境检测',
+        security: [],
+        tags: ['admin:install']
+    )]
+    public function envCheck(): Result
+    {
+        $result = $this->installService->checkEnvironment();
+        return $this->success($result);
+    }
+
+    #[Get(
+        path: '/admin/install/env',
+        operationId: 'getEnvironmentInfo',
+        summary: '获取环境检测信息',
+        security: [],
+        tags: ['admin:install']
+    )]
+    public function envInfo(): Result
+    {
+        $envService = $this->installService->getEnvironmentCheckService();
+        return $this->success([
+            'requirements' => $envService->checkAll(),
+            'summary' => $envService->getSummary(),
+        ]);
+    }
+
     #[Post(
-        path: '/test-connection',
+        path: '/admin/install/test-connection',
         operationId: 'testDatabaseConnection',
-        summary: 'Test database connection',
+        summary: '测试数据库连接',
+        security: [],
         tags: ['admin:install']
     )]
     public function testConnection(): Result
@@ -108,9 +138,10 @@ class InstallController extends AbstractController
     }
 
     #[Get(
-        path: '/databases',
+        path: '/admin/install/databases',
         operationId: 'getDatabases',
-        summary: 'Get database list',
+        summary: '获取数据库列表',
+        security: [],
         tags: ['admin:install']
     )]
     public function getDatabases(): Result
@@ -138,75 +169,99 @@ class InstallController extends AbstractController
         }
     }
 
-    #[Post(
-        path: '/install',
-        operationId: 'doInstall',
-        summary: 'Execute system installation',
+    #[Get(
+        path: '/admin/install/progress',
+        operationId: 'getInstallProgress',
+        summary: '获取安装进度',
+        security: [],
         tags: ['admin:install']
     )]
-    public function install(?InstallRequest $request = null): Result
+    public function progress(): Result
+    {
+        return $this->success($this->installService->getInstallProgress());
+    }
+
+    #[Get(
+        path: '/admin/install/logs',
+        operationId: 'getInstallLogs',
+        summary: '获取安装日志',
+        security: [],
+        tags: ['admin:install']
+    )]
+    public function logs(): Result
+    {
+        return $this->success([
+            'logs' => $this->installService->getInstallLogs(),
+        ]);
+    }
+
+    #[Post(
+        path: '/admin/install',
+        operationId: 'doInstall',
+        summary: '执行系统安装',
+        security: [],
+        tags: ['admin:install']
+    )]
+    public function install(): Result
     {
         try {
             $data = $this->request->all();
-            $config = $request !== null ? $request->getDatabaseConfig() : $this->getDatabaseConfigFromRequest();
-            $createDb = $data['create_db'] ?? true;
-            $runMigrations = $data['run_migrations'] ?? true;
-            $seedData = $data['seed_data'] ?? true;
-            $adminUsername = $data['admin_username'] ?? 'admin';
-            $adminPassword = $data['admin_password'] ?? '123456';
 
-            $this->installService->createEnvFile($config);
+            $config = [
+                'DB_DRIVER' => 'mysql',
+                'DB_HOST' => $data['host'] ?? 'localhost',
+                'DB_PORT' => (int) ($data['port'] ?? 3306),
+                'DB_DATABASE' => $data['database'] ?? '',
+                'DB_USERNAME' => $data['username'] ?? 'root',
+                'DB_PASSWORD' => $data['password'] ?? '',
+                'DB_CHARSET' => $data['charset'] ?? 'utf8mb4',
+                'DB_COLLATION' => $data['collation'] ?? 'utf8mb4_unicode_ci',
+                'DB_PREFIX' => $data['prefix'] ?? '',
+                'APP_NAME' => $data['app_name'] ?? 'MineAdmin',
+                'APP_URL' => $data['app_url'] ?? 'http://127.0.0.1:9501',
+                'APP_ENV' => $data['app_env'] ?? 'dev',
+                'APP_DEBUG' => $data['app_debug'] ?? 'false',
+                'REDIS_HOST' => $data['redis_host'] ?? '127.0.0.1',
+                'REDIS_PORT' => (int) ($data['redis_port'] ?? 6379),
+                'REDIS_AUTH' => $data['redis_auth'] ?? '',
+                'REDIS_DB' => (int) ($data['redis_db'] ?? 0),
+            ];
 
-            // 重新加载 .env 文件到当前进程
-            $this->installService->reloadEnvConfig();
+            $options = [
+                'admin_username' => $data['admin_username'] ?? 'admin',
+                'admin_password' => $data['admin_password'] ?? null,
+                'create_db' => (bool) ($data['create_db'] ?? true),
+                'run_migrations' => (bool) ($data['run_migrations'] ?? true),
+                'seed_data' => (bool) ($data['seed_data'] ?? true),
+            ];
 
-            if ($createDb) {
-                $this->installService->createDatabase($config);
-            }
-
-            if ($runMigrations) {
-                $this->installService->runMigrations();
-            }
-
-            if ($seedData) {
-                $this->installService->seedDatabase($adminUsername, $adminPassword);
-            }
+            $result = $this->installService->install($config, $options);
 
             return $this->success([
-                'installed' => true,
-                'admin_username' => $adminUsername,
-                'message' => 'System installed successfully',
+                'installed' => $result['success'],
+                'admin_username' => $result['admin_username'],
+                'message' => $result['success'] ? '系统安装成功！' : '安装失败',
+                'progress' => $result['progress'],
             ]);
         } catch (\Throwable $e) {
-            $errorMessage = 'Installation failed: ' . $e->getMessage();
-            // 获取更详细的错误信息
-            $trace = $e->getTraceAsString();
-            // 只取前几行堆栈信息
-            $traceLines = explode("\n", $trace);
-            $shortTrace = implode("\n", array_slice($traceLines, 0, 10));
-            $errorMessage .= "\n\nTrace:\n" . $shortTrace;
-            return $this->error($errorMessage);
+            return $this->error('Installation failed: ' . $e->getMessage());
         }
     }
 
-    private function getDatabaseConfigFromRequest(): array
+    #[Post(
+        path: '/admin/install/reset',
+        operationId: 'resetInstall',
+        summary: '重置安装状态',
+        security: [],
+        tags: ['admin:install']
+    )]
+    public function reset(): Result
     {
-        return [
-            'DB_DRIVER' => 'mysql',
-            'DB_HOST' => $this->request->input('host', 'localhost'),
-            'DB_PORT' => (int) $this->request->input('port', 3306),
-            'DB_DATABASE' => $this->request->input('database'),
-            'DB_USERNAME' => $this->request->input('username'),
-            'DB_PASSWORD' => $this->request->input('password', ''),
-            'DB_CHARSET' => $this->request->input('charset', 'utf8mb4'),
-            'DB_COLLATION' => $this->request->input('collation', 'utf8mb4_unicode_ci'),
-            'DB_PREFIX' => $this->request->input('prefix', ''),
-            'APP_NAME' => $this->request->input('app_name', 'MineAdmin'),
-            'APP_URL' => $this->request->input('app_url', 'http://127.0.0.1:9501'),
-            'REDIS_HOST' => $this->request->input('redis_host', '127.0.0.1'),
-            'REDIS_PORT' => (int) $this->request->input('redis_port', 6379),
-            'REDIS_AUTH' => $this->request->input('redis_auth', ''),
-            'REDIS_DB' => (int) $this->request->input('redis_db', 0),
-        ];
+        try {
+            $this->installService->resetInstall();
+            return $this->success(['message' => '安装状态已重置']);
+        } catch (\Throwable $e) {
+            return $this->error('重置失败: ' . $e->getMessage());
+        }
     }
 }

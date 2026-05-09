@@ -15,7 +15,6 @@ namespace App\Service;
 use App\Exception\BusinessException;
 use App\Http\Common\ResultCode;
 use Database\DatabaseSeeder;
-use Hyperf\Contract\ContainerInterface;
 use Hyperf\DbConnection\Db;
 use Hyperf\Di\Annotation\Inject;
 use Psr\Log\LoggerInterface;
@@ -25,9 +24,29 @@ class InstallService
     #[Inject]
     private ?LoggerInterface $logger = null;
 
+    private InstallProgressTracker $progressTracker;
+    private EnvironmentCheckService $envCheckService;
+
     public function __construct()
     {
-        // Logger will be injected automatically via DI
+        $this->progressTracker = new InstallProgressTracker();
+        $this->envCheckService = new EnvironmentCheckService();
+    }
+
+    /**
+     * 获取环境检测服务
+     */
+    public function getEnvironmentCheckService(): EnvironmentCheckService
+    {
+        return $this->envCheckService;
+    }
+
+    /**
+     * 获取进度追踪器
+     */
+    public function getProgressTracker(): InstallProgressTracker
+    {
+        return $this->progressTracker;
     }
 
     /**
@@ -64,6 +83,9 @@ class InstallService
             'db_configured' => false,
             'db_connected' => false,
             'migrations_run' => false,
+            'install_locked' => $this->progressTracker->isLocked(),
+            'lock_info' => $this->progressTracker->getLockInfo(),
+            'progress' => $this->progressTracker->getProgress(),
             'message' => 'System not installed',
         ];
 
@@ -80,7 +102,6 @@ class InstallService
                     $status['installed'] = true;
                     $status['message'] = 'System is installed';
 
-                    // 检查迁移是否已执行
                     try {
                         $tables = Db::select('SHOW TABLES');
                         $status['migrations_run'] = count($tables) > 0;
@@ -101,11 +122,51 @@ class InstallService
     }
 
     /**
+     * 执行环境检测
+     */
+    public function checkEnvironment(): array
+    {
+        $this->progressTracker->log(InstallProgressTracker::STEP_ENV_CHECK, 'info', '开始环境检测');
+
+        $requirements = $this->envCheckService->checkAll();
+        $summary = $this->envCheckService->getSummary();
+
+        $status = $summary['passed']
+            ? InstallProgressTracker::STATUS_SUCCESS
+            : InstallProgressTracker::STATUS_FAILED;
+
+        $this->progressTracker->setProgress(
+            InstallProgressTracker::STEP_ENV_CHECK,
+            $status,
+            $summary
+        );
+
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_ENV_CHECK,
+            $summary['passed'] ? 'success' : 'error',
+            $summary['passed'] ? '环境检测通过' : '环境检测未通过',
+            ['errors' => $summary['errors']]
+        );
+
+        return [
+            'requirements' => $requirements,
+            'summary' => $summary,
+            'passed' => $summary['passed'],
+        ];
+    }
+
+    /**
      * 创建数据库
      */
     public function createDatabase(array $config): bool
     {
         try {
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_DB_CREATE,
+                'info',
+                "正在创建数据库: {$config['DB_DATABASE']}"
+            );
+
             $dsn = sprintf(
                 'mysql:host=%s;port=%d;charset=%s',
                 $config['DB_HOST'],
@@ -126,42 +187,33 @@ class InstallService
 
             $pdo->exec("CREATE DATABASE IF NOT EXISTS {$dbName} CHARACTER SET {$charset} COLLATE {$collation}");
 
-            $this->log('info', "Database '{$config['DB_DATABASE']}' created successfully");
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_DB_CREATE,
+                InstallProgressTracker::STATUS_SUCCESS,
+                ['database' => $config['DB_DATABASE']]
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_DB_CREATE,
+                'success',
+                "数据库 '{$config['DB_DATABASE']}' 创建成功"
+            );
+
             return true;
         } catch (\PDOException $e) {
-            $this->log('error', "Failed to create database: " . $e->getMessage());
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_DB_CREATE,
+                InstallProgressTracker::STATUS_FAILED,
+                ['error' => $e->getMessage()]
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_DB_CREATE,
+                'error',
+                "创建数据库失败: " . $e->getMessage()
+            );
+
             throw new \RuntimeException("Failed to create database: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * 检查数据库是否存在
-     */
-    public function databaseExists(array $config): bool
-    {
-        try {
-            $dsn = sprintf(
-                'mysql:host=%s;port=%d',
-                $config['DB_HOST'],
-                $config['DB_PORT'] ?? 3306
-            );
-
-            $pdo = new \PDO(
-                $dsn,
-                $config['DB_USERNAME'],
-                $config['DB_PASSWORD'],
-                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
-            );
-
-            $dbName = $this->escapeIdentifier($config['DB_DATABASE']);
-            $result = $pdo->query("SHOW DATABASES LIKE '{$config['DB_DATABASE']}'");
-            $exists = $result->rowCount() > 0;
-
-            $this->log('info', "Database '{$config['DB_DATABASE']}' exists: " . ($exists ? 'yes' : 'no'));
-            return $exists;
-        } catch (\PDOException $e) {
-            $this->log('error', "Failed to check database: " . $e->getMessage());
-            throw new BusinessException(ResultCode::FAIL, "Failed to check database existence: " . $e->getMessage());
         }
     }
 
@@ -194,11 +246,17 @@ class InstallService
 
     /**
      * 测试数据库连接
-     * @return array{success: bool, message: string, database_exists: bool}
      */
     public function testDatabaseConnection(array $config): array
     {
-        // 先检查数据库是否已存在
+        $dbHost = $config['DB_HOST'];
+        $dbPort = $config['DB_PORT'] ?? 3306;
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_DB_CONFIG,
+            'info',
+            "正在测试数据库连接: {$dbHost}:{$dbPort}"
+        );
+
         $dbExists = $this->checkDatabaseExists($config);
         if ($dbExists) {
             return [
@@ -208,15 +266,26 @@ class InstallService
             ];
         }
 
-        // 再测试服务器连接
         $connected = $this->checkDatabaseConnection($config);
         if (! $connected) {
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_DB_CONFIG,
+                'error',
+                '无法连接到 MySQL 服务器'
+            );
+
             return [
                 'success' => false,
                 'message' => '无法连接到 MySQL 服务器，请检查连接设置。',
                 'database_exists' => false,
             ];
         }
+
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_DB_CONFIG,
+            'success',
+            '数据库连接测试成功'
+        );
 
         return [
             'success' => true,
@@ -231,7 +300,6 @@ class InstallService
     private function checkDatabaseConnection(array $config): bool
     {
         try {
-            // 只测试 MySQL 服务器连接，不指定数据库
             $dsn = sprintf(
                 'mysql:host=%s;port=%d',
                 $config['DB_HOST'],
@@ -256,273 +324,60 @@ class InstallService
      */
     public function runMigrations(): bool
     {
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_MIGRATION,
+            'info',
+            '开始执行数据库迁移'
+        );
+
+        $this->progressTracker->setProgress(
+            InstallProgressTracker::STEP_MIGRATION,
+            InstallProgressTracker::STATUS_RUNNING
+        );
+
         try {
             $envFile = BASE_PATH . '/.env';
             if (! file_exists($envFile)) {
                 throw new BusinessException(ResultCode::FAIL, '.env file not found');
             }
 
-            $this->log('info', 'Starting migrations via command');
-
-            // 使用 exec 执行 Hyperf 的迁移命令（子进程会读取更新后的 .env）
             $output = [];
             $returnCode = 0;
             exec('cd ' . BASE_PATH . ' && php bin/hyperf.php migrate --force 2>&1', $output, $returnCode);
 
             $outputStr = implode("\n", $output);
-            $this->log('info', 'Migration command output: ' . $outputStr);
 
             if ($returnCode !== 0) {
-                throw new BusinessException(ResultCode::FAIL, "Migration failed with code {$returnCode}: " . $outputStr);
-            }
-
-            $this->log('info', 'All migrations completed successfully');
-            return true;
-        } catch (BusinessException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            $this->log('error', 'Migration failed: ' . $e->getMessage());
-            throw new BusinessException(ResultCode::FAIL, "Migration failed: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * 使用 PDO 获取已迁移的表列表
-     */
-    private function getMigratedTablesWithPdo(\PDO $pdo, string $dbName): array
-    {
-        try {
-            $result = $pdo->query("SHOW TABLES FROM `{$dbName}`");
-            $tables = [];
-            while ($row = $result->fetch(\PDO::FETCH_NUM)) {
-                $tables[] = $row[0];
-            }
-            return $tables;
-        } catch (\Throwable) {
-            return [];
-        }
-    }
-
-    /**
-     * 配置 Hyperf 数据库连接
-     */
-    private function configureHyperfConnection(array $envConfig): void
-    {
-        try {
-            // 首先更新当前进程的环境变量
-            foreach ($envConfig as $key => $value) {
-                if (! is_array($value)) {
-                    $_ENV[$key] = $value;
-                    $_SERVER[$key] = $value;
-                    putenv("{$key}={$value}");
-                }
-            }
-
-            // 获取容器
-            $container = \Hyperf\Context\ApplicationContext::getContainer();
-
-            // 获取连接解析器
-            $resolver = $container->get(\Hyperf\Database\ConnectionResolverInterface::class);
-
-            // 获取连接
-            $connection = $resolver->connection();
-
-            // 使用反射获取所有属性
-            $reflection = new \ReflectionClass($connection);
-            $properties = $reflection->getProperties();
-
-            foreach ($properties as $property) {
-                $property->setAccessible(true);
-                $propertyName = $property->getName();
-
-                // 更新 config
-                if ($propertyName === 'config') {
-                    $config = $property->getValue($connection) ?: [];
-                    $config['host'] = $envConfig['DB_HOST'] ?? 'localhost';
-                    $config['port'] = $envConfig['DB_PORT'] ?? 3306;
-                    $config['database'] = $envConfig['DB_DATABASE'] ?? '';
-                    $config['username'] = $envConfig['DB_USERNAME'] ?? 'root';
-                    $config['password'] = $envConfig['DB_PASSWORD'] ?? '';
-                    $config['charset'] = $envConfig['DB_CHARSET'] ?? 'utf8mb4';
-                    $config['collation'] = $envConfig['DB_COLLATION'] ?? 'utf8mb4_unicode_ci';
-                    $config['prefix'] = $envConfig['DB_PREFIX'] ?? '';
-                    $property->setValue($connection, $config);
-                    $this->log('info', 'Updated connection config');
-                }
-
-                // 更新 PDO 连接
-                if ($propertyName === 'pdo' || stripos($propertyName, 'pdo') !== false) {
-                    $dsn = sprintf(
-                        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-                        $envConfig['DB_HOST'] ?? 'localhost',
-                        $envConfig['DB_PORT'] ?? 3306,
-                        $envConfig['DB_DATABASE'] ?? '',
-                        $envConfig['DB_CHARSET'] ?? 'utf8mb4'
-                    );
-                    $newPdo = new \PDO(
-                        $dsn,
-                        $envConfig['DB_USERNAME'] ?? 'root',
-                        $envConfig['DB_PASSWORD'] ?? '',
-                        [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
-                    );
-                    $property->setValue($connection, $newPdo);
-                    $this->log('info', 'Replaced PDO connection in property: ' . $propertyName);
-                }
-            }
-
-            // 尝试直接替换容器中的连接实例
-            $this->replaceConnectionInResolver($resolver, $connection);
-
-            $this->log('info', 'Hyperf connection fully configured');
-        } catch (\Throwable $e) {
-            $this->log('error', 'Failed to configure Hyperf connection: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * 替换 Resolver 中的连接实例
-     */
-    private function replaceConnectionInResolver($resolver, $connection): void
-    {
-        try {
-            $reflection = new \ReflectionClass($resolver);
-            $properties = $reflection->getProperties();
-
-            foreach ($properties as $property) {
-                $property->setAccessible(true);
-                $value = $property->getValue($resolver);
-
-                // 如果是数组，尝试找到连接池并替换
-                if (is_array($value)) {
-                    foreach ($value as $key => $conn) {
-                        if (is_object($conn) && method_exists($conn, 'getName')) {
-                            // 这是连接实例
-                            if ($conn->getName() === $connection->getName()) {
-                                $value[$key] = $connection;
-                                $property->setValue($resolver, $value);
-                                $this->log('info', 'Replaced connection in resolver property: ' . $property->getName());
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            $this->log('warning', 'Could not replace connection in resolver: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * 使用 PDO 执行单个迁移文件
-     */
-    private function executeMigrationWithPdo(\PDO $pdo, string $migrationFile): void
-    {
-        $migrationPath = BASE_PATH . '/databases/migrations/' . $migrationFile;
-        $className = $this->getClassNameFromMigration($migrationFile);
-
-        require_once $migrationPath;
-
-        /** @var \Hyperf\Database\Migrations\Migration $migration */
-        $migration = new $className();
-
-        // 使用反射来调用 up 方法
-        if (method_exists($migration, 'up')) {
-            $migration->up();
-        }
-    }
-
-    /**
-     * 获取迁移文件列表
-     */
-    private function getMigrationFiles(): array
-    {
-        $migrationsPath = BASE_PATH . '/databases/migrations/';
-        $files = glob($migrationsPath . '*.php');
-
-        $migrationFiles = [];
-        foreach ($files as $file) {
-            $migrationFiles[] = basename($file);
-        }
-
-        sort($migrationFiles);
-        return $migrationFiles;
-    }
-
-    /**
-     * 从迁移文件名获取表名
-     */
-    private function getTableNameFromMigration(string $migrationFile): string
-    {
-        // 从文件名提取表名，例如 create_user_table.php -> user
-        if (preg_match('/create_(\w+)_table\.php$/', $migrationFile, $matches)) {
-            return $matches[1];
-        }
-        return '';
-    }
-
-    /**
-     * 从迁移文件名获取类名
-     */
-    private function getClassNameFromMigration(string $migrationFile): string
-    {
-        // 例如: 2021_04_12_160526_create_user_table.php -> CreateUserTable
-        $content = file_get_contents(BASE_PATH . '/databases/migrations/' . $migrationFile);
-
-        if (preg_match('/class\s+(\w+)\s+extends/', $content, $matches)) {
-            return $matches[1];
-        }
-
-        return '';
-    }
-
-    /**
-     * 获取已保存的 .env 配置
-     */
-    public function getEnvConfig(): array
-    {
-        $envFile = BASE_PATH . '/.env';
-        return $this->parseEnvFile($envFile);
-    }
-
-    /**
-     * 通过命令行执行迁移
-     */
-    public function runMigrationsViaCommand(): bool
-    {
-        try {
-            // 执行迁移命令
-            $cmd = sprintf(
-                'cd %s && php ./bin/hyperf.php migrate --force 2>&1',
-                BASE_PATH
-            );
-
-            $output = [];
-            $returnCode = 0;
-            exec($cmd, $output, $returnCode);
-
-            $outputStr = implode("\n", $output);
-
-            if ($returnCode !== 0) {
-                $this->log('error', 'Migration command failed: ' . $outputStr);
                 throw new BusinessException(ResultCode::FAIL, "Migration failed: " . $outputStr);
             }
 
-            $this->log('info', 'Migrations completed via command: ' . $outputStr);
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_MIGRATION,
+                InstallProgressTracker::STATUS_SUCCESS,
+                ['tables_created' => count($output)]
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_MIGRATION,
+                'success',
+                '数据库迁移完成'
+            );
+
             return true;
         } catch (\Throwable $e) {
-            $this->log('error', 'Migration failed: ' . $e->getMessage());
-            throw new BusinessException(ResultCode::FAIL, "Migration failed: " . $e->getMessage());
-        }
-    }
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_MIGRATION,
+                InstallProgressTracker::STATUS_FAILED,
+                ['error' => $e->getMessage()]
+            );
 
-    /**
-     * 清除代理缓存
-     */
-    public function clearProxyCache(): void
-    {
-        $cacheFile = BASE_PATH . '/runtime/container/proxy/';
-        if (is_dir($cacheFile)) {
-            array_map('unlink', glob("{$cacheFile}*.php"));
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_MIGRATION,
+                'error',
+                '数据库迁移失败: ' . $e->getMessage()
+            );
+
+            throw $e;
         }
     }
 
@@ -531,8 +386,19 @@ class InstallService
      */
     public function seedDatabase(?string $adminUsername = null, ?string $adminPassword = null): bool
     {
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_SEED,
+            'info',
+            '开始填充初始数据',
+            ['admin_username' => $adminUsername ?? 'admin']
+        );
+
+        $this->progressTracker->setProgress(
+            InstallProgressTracker::STEP_SEED,
+            InstallProgressTracker::STATUS_RUNNING
+        );
+
         try {
-            // 读取刚创建的 .env 文件获取配置
             $envFile = BASE_PATH . '/.env';
             if (! file_exists($envFile)) {
                 throw new BusinessException(ResultCode::FAIL, '.env file not found');
@@ -540,56 +406,41 @@ class InstallService
 
             $envConfig = $this->parseEnvFile($envFile);
 
-            // 配置 Hyperf 数据库连接
             $this->configureDatabaseConnection($envConfig);
 
-            // 执行数据库迁移命令
-            $this->runMigrationsCommand();
-
-            // 执行数据填充命令
-            $this->runSeederCommand($adminUsername, $adminPassword);
-
-            $this->log('info', 'Database seeded successfully');
-            return true;
-        } catch (\Throwable $e) {
-            $this->log('error', 'Seeding failed: ' . $e->getMessage());
-            throw new BusinessException(ResultCode::FAIL, "Seeding failed: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * 执行数据库迁移命令
-     */
-    private function runMigrationsCommand(): void
-    {
-        $this->log('info', 'Running migrations...');
-
-        $command = 'php bin/hyperf.php migrate --force 2>&1';
-        $output = [];
-        $returnCode = 0;
-
-        exec($command, $output, $returnCode);
-
-        $outputStr = implode("\n", $output);
-        $this->log('info', 'Migration output: ' . $outputStr);
-
-        $this->log('info', 'Migrations completed');
-    }
-
-    /**
-     * 执行数据填充命令
-     */
-    private function runSeederCommand(?string $adminUsername, ?string $adminPassword): void
-    {
-        $this->log('info', 'Running seeders...');
-
-        try {
             $seeder = new \Database\DatabaseSeeder();
             $seeder->run($adminUsername, $adminPassword);
-            $this->log('info', 'Seeders completed successfully');
+
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_SEED,
+                InstallProgressTracker::STATUS_SUCCESS,
+                [
+                    'admin_username' => $adminUsername ?? 'admin',
+                    'admin_password_set' => ! empty($adminPassword),
+                ]
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_SEED,
+                'success',
+                "初始数据填充完成 (管理员: {$adminUsername})"
+            );
+
+            return true;
         } catch (\Throwable $e) {
-            $this->log('error', 'Seeder error: ' . $e->getMessage());
-            throw new \RuntimeException('Seeder failed: ' . $e->getMessage());
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_SEED,
+                InstallProgressTracker::STATUS_FAILED,
+                ['error' => $e->getMessage()]
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_SEED,
+                'error',
+                '数据填充失败: ' . $e->getMessage()
+            );
+
+            throw $e;
         }
     }
 
@@ -600,17 +451,10 @@ class InstallService
     {
         try {
             $container = \Hyperf\Context\ApplicationContext::getContainer();
-
-            // 获取连接解析器
             $resolver = $container->get(\Hyperf\Database\ConnectionResolverInterface::class);
-
-            // 获取连接
             $connection = $resolver->connection();
 
-            // 使用反射更新连接配置
             $reflection = new \ReflectionClass($connection);
-
-            // 找到并更新 config 属性
             $configProperty = $reflection->getProperty('config');
             $configProperty->setAccessible(true);
 
@@ -625,8 +469,6 @@ class InstallService
             $config['prefix'] = $envConfig['DB_PREFIX'] ?? '';
 
             $configProperty->setValue($connection, $config);
-
-            // 重新连接数据库
             $connection->reconnect();
 
             $this->log('info', 'Database connection configured: ' . $config['database']);
@@ -637,30 +479,38 @@ class InstallService
     }
 
     /**
-     * 解析 .env 文件
+     * 获取数据库列表
      */
-    private function parseEnvFile(string $path): array
+    public function getDatabaseList(array $config): array
     {
-        $config = [];
-        if (! file_exists($path)) {
-            return $config;
-        }
+        try {
+            $dsn = sprintf(
+                'mysql:host=%s;port=%d',
+                $config['DB_HOST'],
+                $config['DB_PORT'] ?? 3306
+            );
 
-        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (strpos(trim($line), '#') === 0) {
-                continue;
-            }
-            if (strpos($line, '=') !== false) {
-                [$key, $value] = explode('=', $line, 2);
-                $key = trim($key);
-                $value = trim($value);
-                $value = trim($value, '"\'');
-                $config[$key] = $value;
-            }
-        }
+            $pdo = new \PDO(
+                $dsn,
+                $config['DB_USERNAME'],
+                $config['DB_PASSWORD'],
+                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+            );
 
-        return $config;
+            $stmt = $pdo->query("SHOW DATABASES");
+            $databases = [];
+
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $dbName = array_values($row)[0];
+                if (! in_array($dbName, ['information_schema', 'mysql', 'performance_schema', 'sys'])) {
+                    $databases[] = $dbName;
+                }
+            }
+
+            return $databases;
+        } catch (\PDOException $e) {
+            throw new BusinessException(ResultCode::FAIL, "Failed to get database list: " . $e->getMessage());
+        }
     }
 
     /**
@@ -668,12 +518,17 @@ class InstallService
      */
     public function createEnvFile(array $config): bool
     {
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_DB_CONFIG,
+            'info',
+            '正在创建 .env 配置文件'
+        );
+
         $envExample = file_get_contents(BASE_PATH . '/.env.example');
         if ($envExample === false) {
             throw new BusinessException(ResultCode::FAIL, '.env.example file not found');
         }
 
-        // 生成 JWT secret
         $jwtSecret = $this->generateJwtSecret();
 
         $replacements = [
@@ -714,44 +569,13 @@ class InstallService
             throw new BusinessException(ResultCode::FAIL, 'Failed to create .env file');
         }
 
-        $this->log('info', '.env file created successfully');
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_DB_CONFIG,
+            'success',
+            '.env 配置文件创建成功'
+        );
+
         return true;
-    }
-
-    /**
-     * 获取数据库列表（用于检测连接）
-     */
-    public function getDatabaseList(array $config): array
-    {
-        try {
-            $dsn = sprintf(
-                'mysql:host=%s;port=%d',
-                $config['DB_HOST'],
-                $config['DB_PORT'] ?? 3306
-            );
-
-            $pdo = new \PDO(
-                $dsn,
-                $config['DB_USERNAME'],
-                $config['DB_PASSWORD'],
-                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
-            );
-
-            $stmt = $pdo->query("SHOW DATABASES");
-            $databases = [];
-
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $dbName = array_values($row)[0];
-                // 排除系统数据库
-                if (! in_array($dbName, ['information_schema', 'mysql', 'performance_schema', 'sys'])) {
-                    $databases[] = $dbName;
-                }
-            }
-
-            return $databases;
-        } catch (\PDOException $e) {
-            throw new BusinessException(ResultCode::FAIL, "Failed to get database list: " . $e->getMessage());
-        }
     }
 
     /**
@@ -759,12 +583,10 @@ class InstallService
      */
     public function reloadEnvConfig(): void
     {
-        // 清除配置缓存
         if (function_exists('opcache_get_status')) {
             opcache_get_status();
         }
 
-        // 重新加载 .env 配置到 Hyperf
         $envFile = BASE_PATH . '/.env';
         if (file_exists($envFile)) {
             $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -788,6 +610,116 @@ class InstallService
     }
 
     /**
+     * 完整安装流程
+     */
+    public function install(array $config, array $options = []): array
+    {
+        // 获取安装锁
+        if (! $this->progressTracker->acquireLock()) {
+            throw new BusinessException(ResultCode::FAIL, '安装进程已被锁定，请稍后重试');
+        }
+
+        $adminUsername = $options['admin_username'] ?? 'admin';
+        $adminPassword = $options['admin_password'] ?? null;
+        $createDb = $options['create_db'] ?? true;
+        $runMigrations = $options['run_migrations'] ?? true;
+        $seedData = $options['seed_data'] ?? true;
+
+        $result = [
+            'success' => false,
+            'admin_username' => $adminUsername,
+            'admin_password' => $adminPassword,
+            'logs' => [],
+            'progress' => [],
+        ];
+
+        try {
+            // 1. 环境检测
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_ENV_CHECK,
+                'info',
+                '检查系统环境'
+            );
+
+            $envResult = $this->checkEnvironment();
+            if (! $envResult['passed']) {
+                throw new BusinessException(
+                    ResultCode::FAIL,
+                    '环境检测未通过: ' . implode(', ', $envResult['summary']['errors'])
+                );
+            }
+
+            // 2. 创建 .env 文件
+            $this->createEnvFile($config);
+            $this->reloadEnvConfig();
+
+            // 3. 创建数据库
+            if ($createDb) {
+                $this->createDatabase($config);
+            }
+
+            // 4. 执行迁移
+            if ($runMigrations) {
+                $this->runMigrations();
+            }
+
+            // 5. 填充数据
+            if ($seedData) {
+                $this->seedDatabase($adminUsername, $adminPassword);
+            }
+
+            // 6. 安装完成
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_COMPLETE,
+                InstallProgressTracker::STATUS_SUCCESS
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_COMPLETE,
+                'success',
+                '系统安装完成！'
+            );
+
+            $result['success'] = true;
+            $result['progress'] = $this->progressTracker->getProgress();
+            $result['logs'] = $this->progressTracker->getLogs();
+
+            // 释放锁
+            $this->progressTracker->releaseLock();
+
+            return $result;
+        } catch (\Throwable $e) {
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_COMPLETE,
+                'error',
+                '安装失败: ' . $e->getMessage()
+            );
+
+            $result['logs'] = $this->progressTracker->getLogs();
+            $result['error'] = $e->getMessage();
+
+            // 不释放锁，保留安装进度以便调试
+            throw $e;
+        }
+    }
+
+    /**
+     * 获取安装日志
+     */
+    public function getInstallLogs(): array
+    {
+        return $this->progressTracker->getLogs();
+    }
+
+    /**
+     * 获取安装进度
+     */
+    public function getInstallProgress(): array
+    {
+        return $this->progressTracker->getProgress();
+    }
+
+    /**
      * 解析 .env 文件内容
      */
     private function parseEnv(string $content): array
@@ -805,6 +737,33 @@ class InstallService
                 [$key, $value] = explode('=', $line, 2);
                 $key = trim($key);
                 $value = trim($value);
+                $config[$key] = $value;
+            }
+        }
+
+        return $config;
+    }
+
+    /**
+     * 解析 .env 文件
+     */
+    private function parseEnvFile(string $path): array
+    {
+        $config = [];
+        if (! file_exists($path)) {
+            return $config;
+        }
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), '#') === 0) {
+                continue;
+            }
+            if (strpos($line, '=') !== false) {
+                [$key, $value] = explode('=', $line, 2);
+                $key = trim($key);
+                $value = trim($value);
+                $value = trim($value, '"\'');
                 $config[$key] = $value;
             }
         }
@@ -844,11 +803,19 @@ class InstallService
     public function getInstallSteps(): array
     {
         return [
-            1 => ['title' => 'Environment Check', 'description' => 'Check system requirements'],
-            2 => ['title' => 'Database Configuration', 'description' => 'Configure database connection'],
-            3 => ['title' => 'Create Database', 'description' => 'Create database if not exists'],
-            4 => ['title' => 'Run Migrations', 'description' => 'Create database tables'],
-            5 => ['title' => 'Seed Data', 'description' => 'Insert initial data'],
+            1 => ['title' => '环境检测', 'key' => 'env_check', 'description' => '检查系统环境和依赖'],
+            2 => ['title' => '数据库配置', 'key' => 'db_config', 'description' => '配置数据库连接信息'],
+            3 => ['title' => '创建数据库', 'key' => 'db_create', 'description' => '创建数据库和表结构'],
+            4 => ['title' => '填充数据', 'key' => 'seed', 'description' => '导入初始数据'],
+            5 => ['title' => '安装完成', 'key' => 'complete', 'description' => '系统已准备就绪'],
         ];
+    }
+
+    /**
+     * 重置安装状态
+     */
+    public function resetInstall(): void
+    {
+        $this->progressTracker->reset();
     }
 }
