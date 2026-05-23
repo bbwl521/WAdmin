@@ -15,7 +15,6 @@ namespace App\Command;
 use App\Service\InstallService;
 use Hyperf\Command\Annotation\AsCommand;
 use Hyperf\Command\Concerns\InteractsWithIO;
-use Hyperf\Di\Annotation\Inject;
 
 #[AsCommand(
     signature: 'mine:install',
@@ -25,8 +24,9 @@ class InstallCommand
 {
     use InteractsWithIO;
 
-    #[Inject]
-    private InstallService $installService;
+    public function __construct(
+        private readonly InstallService $installService,
+    ) {}
 
     public function handle(): void
     {
@@ -36,13 +36,13 @@ class InstallCommand
         $this->output->section('Installation Status');
 
         $this->output->writeln([
-            sprintf('  <info>Environment File:</info> %s', $status['env_exists'] ? '<fg=green>EXISTS</>' : '<fg=red>NOT FOUND</>'),
-            sprintf('  <info>Database Configured:</info> %s', $status['db_configured'] ? '<fg=green>YES</>' : '<fg=red>NO</>'),
-            sprintf('  <info>Database Connected:</info> %s', $status['db_connected'] ? '<fg=green>YES</>' : '<fg=red>NO</>'),
-            sprintf('  <info>Migrations Run:</info> %s', $status['migrations_run'] ? '<fg=green>YES</>' : '<fg=red>NO</>'),
-            sprintf('  <info>System Installed:</info> %s', $status['installed'] ? '<fg=green>YES</>' : '<fg=red>NO</>'),
+            \sprintf('  <info>Environment File:</info> %s', $status['env_exists'] ? '<fg=green>EXISTS</>' : '<fg=red>NOT FOUND</>'),
+            \sprintf('  <info>Database Configured:</info> %s', $status['db_configured'] ? '<fg=green>YES</>' : '<fg=red>NO</>'),
+            \sprintf('  <info>Database Connected:</info> %s', $status['db_connected'] ? '<fg=green>YES</>' : '<fg=red>NO</>'),
+            \sprintf('  <info>Migrations Run:</info> %s', $status['migrations_run'] ? '<fg=green>YES</>' : '<fg=red>NO</>'),
+            \sprintf('  <info>System Installed:</info> %s', $status['installed'] ? '<fg=green>YES</>' : '<fg=red>NO</>'),
             '',
-            sprintf('  Status: %s', $status['message']),
+            \sprintf('  Status: %s', $status['message']),
         ]);
 
         if ($status['installed']) {
@@ -52,13 +52,13 @@ class InstallCommand
             $this->output->writeln([
                 '',
                 'Please visit the installation page at:',
-                sprintf('  <fg=blue>http://127.0.0.1:9501/install</>', ''),
+                '  <fg=blue>http://127.0.0.1:9501/install</>',
                 '',
                 'Or use the API endpoint:',
-                sprintf('  <fg=blue>POST /admin/install/install</>', ''),
+                '  <fg=blue>POST /admin/install/install</>',
                 '',
                 'For detailed installation instructions, please visit:',
-                sprintf('  <fg=blue>https://doc.mineadmin.com</>', ''),
+                '  <fg=blue>https://doc.mineadmin.com</>',
             ]);
         }
     }

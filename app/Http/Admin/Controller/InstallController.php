@@ -36,7 +36,7 @@ class InstallController extends AbstractController
         security: [],
         tags: ['admin:install']
     )]
-    #[ResultResponse(instance: \App\Http\Common\Result::class)]
+    #[ResultResponse(instance: Result::class)]
     public function status(): Result
     {
         return $this->success($this->installService->getInstallStatus());
@@ -130,11 +130,10 @@ class InstallController extends AbstractController
 
         if ($result['success']) {
             return $this->success($result);
-        } else {
-            return $this->error($result['message'], [
-                'database_exists' => $result['database_exists'] ?? false,
-            ]);
         }
+        return $this->error($result['message'], [
+            'database_exists' => $result['database_exists'] ?? false,
+        ]);
     }
 
     #[Get(
@@ -235,7 +234,17 @@ class InstallController extends AbstractController
                 'seed_data' => (bool) ($data['seed_data'] ?? true),
             ];
 
-            $result = $this->installService->install($config, $options);
+            $result = $this->installService->installation(
+                mysqlHostname: $data['host'] ?? 'localhost',
+                mysqlHostport: (int) ($data['port'] ?? 3306),
+                mysqlDatabase: $data['database'] ?? '',
+                mysqlUsername: $data['username'] ?? 'root',
+                mysqlPassword: $data['password'] ?? '',
+                mysqlPrefix: $data['prefix'] ?? '',
+                adminUsername: $data['admin_username'] ?? 'admin',
+                adminPassword: $data['admin_password'] ?? null,
+                siteName: $data['app_name'] ?? null,
+            );
 
             return $this->success([
                 'installed' => $result['success'],
@@ -251,13 +260,18 @@ class InstallController extends AbstractController
     #[Post(
         path: '/admin/install/reset',
         operationId: 'resetInstall',
-        summary: '重置安装状态',
+        summary: '重置安装状态（仅未安装时可用）',
         security: [],
         tags: ['admin:install']
     )]
     public function reset(): Result
     {
         try {
+            // 守卫：已安装状态下禁止通过 API 重置
+            if ($this->installService->isInstalled()) {
+                return $this->error('系统已安装，不允许通过 API 重置安装状态。如需重新安装请手动删除 runtime/.install/install.lock');
+            }
+
             $this->installService->resetInstall();
             return $this->success(['message' => '安装状态已重置']);
         } catch (\Throwable $e) {

@@ -44,7 +44,7 @@ class DepartmentService extends IService
             if (empty($entity)) {
                 throw new BusinessException(ResultCode::NOT_FOUND);
             }
-            if (!$this->repository->updateById($id, $data)) {
+            if (! $this->repository->updateById($id, $data)) {
                 throw new BusinessException(ResultCode::FAIL);
             }
             $entity->refresh();

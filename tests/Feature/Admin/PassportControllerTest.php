@@ -25,7 +25,7 @@ use HyperfTests\HttpTestCase;
  */
 final class PassportControllerTest extends HttpTestCase
 {
-    public function testLoginUsernameNotFound()
+    public function testLoginUsernameNotFound(): void
     {
         User::where('username', 'admin')->forceDelete();
         $result = $this->post('/admin/passport/login', [
@@ -35,7 +35,7 @@ final class PassportControllerTest extends HttpTestCase
         self::assertSame(Arr::get($result, 'code'), ResultCode::UNPROCESSABLE_ENTITY->value);
     }
 
-    public function testLoginUserPasswordFail()
+    public function testLoginUserPasswordFail(): void
     {
         $user = User::create([
             'username' => Str::random(10),
@@ -50,7 +50,7 @@ final class PassportControllerTest extends HttpTestCase
         $user->forceDelete();
     }
 
-    public function testLoginExistUsername()
+    public function testLoginExistUsername(): void
     {
         $user = User::create([
             'username' => uniqid('admin'),
@@ -65,7 +65,7 @@ final class PassportControllerTest extends HttpTestCase
         $user->forceDelete();
     }
 
-    public function testLoginSuccess()
+    public function testLoginSuccess(): void
     {
         $user = User::create([
             'username' => Str::random(10),
@@ -83,13 +83,13 @@ final class PassportControllerTest extends HttpTestCase
         $user->forceDelete();
     }
 
-    public function testLogoutFail()
+    public function testLogoutFail(): void
     {
         $result = $this->post('/admin/passport/logout');
         self::assertSame(Arr::get($result, 'code'), ResultCode::UNAUTHORIZED->value);
     }
 
-    public function testLogoutSuccess()
+    public function testLogoutSuccess(): void
     {
         $user = User::create([
             'username' => Str::random(10),

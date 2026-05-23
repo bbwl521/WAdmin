@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  root@imoi.cn
  * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
  */
+
 namespace Database;
 
 use Database\Seeders\MenuSeeder20240926;
@@ -48,8 +49,8 @@ class DatabaseSeeder extends Seeder
         $password = $password ?: '123456';
 
         // 创建管理员用户
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $userId = Db::table($table)->insertGetId([
+        $hashedPassword = password_hash($password, \PASSWORD_DEFAULT);
+        return Db::table($table)->insertGetId([
             'username' => $username,
             'password' => $hashedPassword,
             'user_type' => '100',
@@ -65,7 +66,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 返回用户ID供后续使用（用于用户-角色关联）
-        return $userId;
     }
 
     /**
@@ -74,8 +74,8 @@ class DatabaseSeeder extends Seeder
     private function seedMenus(): void
     {
         // 直接实例化并调用 seeder（Hyperf 的 Seeder 没有 call 方法）
-        (new \Database\Seeders\MenuSeeder20240926())->run();
-        (new \Database\Seeders\UserDept20250310())->run();
+        (new MenuSeeder20240926())->run();
+        (new UserDept20250310())->run();
     }
 
     /**

@@ -59,7 +59,7 @@ class InstallRequest extends FormRequest
     }
 
     /**
-     * 获取数据库配置
+     * 获取数据库配置.
      */
     public function getDatabaseConfig(): array
     {

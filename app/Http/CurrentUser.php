@@ -17,8 +17,6 @@ use App\Model\Permission\User;
 use App\Service\PassportService;
 use App\Service\Permission\MenuService;
 use App\Service\Permission\UserService;
-use Hyperf\Collection\Arr;
-use Hyperf\Collection\Collection;
 use Hyperf\Context\Context;
 use Lcobucci\JWT\Token\RegisteredClaims;
 use Mine\Jwt\Traits\RequestScopedTokenTrait;

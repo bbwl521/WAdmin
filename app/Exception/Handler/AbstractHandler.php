@@ -69,7 +69,7 @@ abstract class AbstractHandler extends ExceptionHandler
     /**
      * 上报日志+打印错误.
      */
-    public function report(\Throwable $throwable)
+    public function report(\Throwable $throwable): void
     {
         // 如果是debug模式，打印错误到控制台
         if ($this->isDebug()) {

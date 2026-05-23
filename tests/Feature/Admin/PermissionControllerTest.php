@@ -202,7 +202,7 @@ final class PermissionControllerTest extends ControllerCase
         self::assertSame(\count(Arr::get($result, 'data')), 0);
     }
 
-    public function testUpdateInfo()
+    public function testUpdateInfo(): void
     {
         $user = $this->generatorUser();
         $token = $this->getToken($user);

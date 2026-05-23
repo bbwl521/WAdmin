@@ -100,22 +100,23 @@ class EnvironmentCheckService
         $this->checkAll();
 
         $passedCount = 0;
+        /** @var int $totalCount */
         $totalCount = 0;
         $errors = [];
 
         // PHP 版本
-        $totalCount++;
+        ++$totalCount;
         if ($this->requirements['php']['passed']) {
-            $passedCount++;
+            ++$passedCount;
         } else {
             $errors[] = $this->requirements['php']['message'];
         }
 
         // PHP 扩展
         foreach ($this->requirements['php_extensions'] as $ext) {
-            $totalCount++;
+            ++$totalCount;
             if ($ext['passed']) {
-                $passedCount++;
+                ++$passedCount;
             } elseif ($ext['required']) {
                 $errors[] = "缺少必需扩展: {$ext['name']}";
             }
@@ -123,9 +124,9 @@ class EnvironmentCheckService
 
         // 目录权限
         foreach ($this->requirements['directories'] as $dir) {
-            $totalCount++;
+            ++$totalCount;
             if ($dir['passed']) {
-                $passedCount++;
+                ++$passedCount;
             } elseif ($dir['required']) {
                 $errors[] = "目录不可写: {$dir['name']}";
             }
@@ -142,8 +143,8 @@ class EnvironmentCheckService
 
     private function checkPhp(): array
     {
-        $version = PHP_VERSION;
-        $minVersion = '8.1.0';
+        $version = \PHP_VERSION;
+        $minVersion = '8.2.0';
         $passed = version_compare($version, $minVersion, '>=');
 
         return [
@@ -168,9 +169,9 @@ class EnvironmentCheckService
 
             if ($checkType === 'function') {
                 // 通过检查函数是否存在来判断
-                $isLoaded = function_exists('token_get_all');
+                $isLoaded = \function_exists('token_get_all');
             } else {
-                $isLoaded = in_array($key, $loadedExtensions) || extension_loaded($key);
+                $isLoaded = \in_array($key, $loadedExtensions, true) || \extension_loaded($key);
             }
 
             $extensions[$key] = [
@@ -249,7 +250,7 @@ class EnvironmentCheckService
         $configs = [];
 
         foreach ($this->phpConfigurations as $key => $config) {
-            $value = ini_get($key);
+            $value = \ini_get($key);
             $minValue = $config['min'];
             $passed = $this->compareConfigValue($value, $minValue);
 
@@ -272,18 +273,18 @@ class EnvironmentCheckService
     private function compareConfigValue(string $value, $minValue): bool
     {
         // 0 表示无限制，在 Swoole 环境下是正常的
-        if ($value === '0' || strtolower($value) === 'unlimited') {
+        if ($value === '0' || mb_strtolower($value) === 'unlimited') {
             return true;
         }
 
         // 处理内存限制 (如 128M, 256M)
-        if (is_string($minValue) && preg_match('/^(\d+)(M|K|G)?$/i', $minValue, $minMatches)) {
+        if (\is_string($minValue) && preg_match('/^(\d+)(M|K|G)?$/i', $minValue, $minMatches)) {
             $minNum = (int) $minMatches[1];
-            $minUnit = strtoupper($minMatches[2] ?? 'M');
+            $minUnit = mb_strtoupper($minMatches[2] ?? 'M');
 
             if (preg_match('/^(\d+)(M|K|G)?$/i', $value, $valMatches)) {
                 $valNum = (int) $valMatches[1];
-                $valUnit = strtoupper($valMatches[2] ?? 'M');
+                $valUnit = mb_strtoupper($valMatches[2] ?? 'M');
 
                 $minBytes = $this->convertToBytes($minNum, $minUnit);
                 $valBytes = $this->convertToBytes($valNum, $valUnit);

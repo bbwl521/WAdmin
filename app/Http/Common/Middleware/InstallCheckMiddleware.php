@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Http\Common\Middleware;
 
+use Hyperf\HttpMessage\Server\Response;
 use Hyperf\HttpMessage\Stream\SwooleFileStream;
-use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -21,16 +21,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class InstallCheckMiddleware implements MiddlewareInterface
 {
-    protected ContainerInterface $container;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
-
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-
         $uri = $request->getUri()->getPath();
         // 安装相关路径和白名单路径直接放行
         $allowedPaths = [
@@ -51,7 +43,7 @@ class InstallCheckMiddleware implements MiddlewareInterface
         if (! $installed) {
             // 未安装，返回安装页面
             $stream = new SwooleFileStream(BASE_PATH . '/public/install.html');
-            return (new \Hyperf\HttpMessage\Server\Response())
+            return (new Response())
                 ->withHeader('Content-Type', 'text/html; charset=utf-8')
                 ->withBody($stream);
         }
