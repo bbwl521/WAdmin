@@ -32,51 +32,22 @@ if (file_exists($envFile)) {
 
 /**
  * Check if the system is installed
+ * 通过 runtime/.install/install.lock 锁文件判断，类似 FastAdmin
  */
 function checkInstallation(): bool
 {
-    $envFile = BASE_PATH . '/.env';
-
-    // If .env doesn't exist, system is not installed
-    if (! file_exists($envFile)) {
-        return false;
-    }
-
-    // Parse .env file to check if database is configured
-    $envContent = file_get_contents($envFile);
-    if (empty($envContent)) {
-        return false;
-    }
-
-    $config = [];
-    foreach (explode("\n", $envContent) as $line) {
-        $line = trim($line);
-        if (empty($line) || str_starts_with($line, '#')) {
-            continue;
-        }
-        if (str_contains($line, '=')) {
-            [$key, $value] = explode('=', $line, 2);
-            $config[trim($key)] = trim($value);
-        }
-    }
-
-    // Check if required database configuration exists
-    if (empty($config['DB_DATABASE']) || empty($config['DB_HOST'])) {
-        return false;
-    }
-
-    return true;
+    return file_exists(BASE_PATH . '/runtime/.install/install.lock');
 }
 
 /**
- * Print installation instructions
+ * Print installation instructions and try to open browser
  */
 function printInstallInstructions(): void
 {
     $ascii = <<<'ART'
    ___ _           _                   _
   / __(_)_ __   __| | ___  _ __   ___ (_)_ __ ___
- | |__| | '_ \ / _` |/ _ \| '_ \ / _ \| | '__/ _ \
+ | |__| | '_ \ / _` |/ _ \| '_ \ / _ \| | '__/ _ \\
  |  __| | | | | (_| | (_) | |_) | (_) | | | |  __/
  |_|  |_|_| |_|\__,_|\___/| .__/ \___/|_|_|  \___|
                            |_|
@@ -97,6 +68,36 @@ ART;
     echo "\n";
     echo "  For more information, visit:\n";
     echo "    \033[36m  https://doc.mineadmin.com\033[0m\n";
+    echo "\n";
+
+    // Try to open browser automatically
+    $installUrl = 'http://127.0.0.1:9501/install';
+    $opened = false;
+
+    if (PHP_OS_FAMILY === 'Darwin') {
+        // macOS
+        exec('open ' . escapeshellarg($installUrl) . ' > /dev/null 2>&1 &', $output, $returnCode);
+        $opened = ($returnCode === 0);
+    } elseif (PHP_OS_FAMILY === 'Windows') {
+        // Windows
+        exec('start "" ' . escapeshellarg($installUrl) . ' > nul 2>&1', $output, $returnCode);
+        $opened = ($returnCode === 0);
+    } else {
+        // Linux - try xdg-open, then sensible-browser
+        exec('xdg-open ' . escapeshellarg($installUrl) . ' > /dev/null 2>&1 &', $output, $returnCode);
+        if ($returnCode === 0) {
+            $opened = true;
+        } else {
+            exec('sensible-browser ' . escapeshellarg($installUrl) . ' > /dev/null 2>&1 &', $output, $returnCode);
+            $opened = ($returnCode === 0);
+        }
+    }
+
+    if ($opened) {
+        echo "  \033[32m✅ Browser opened automatically: {$installUrl}\033[0m\n";
+    } else {
+        echo "  \033[33m⚠️  Could not open browser automatically. Please open the URL manually.\033[0m\n";
+    }
     echo "\n";
 }
 

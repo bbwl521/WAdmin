@@ -9,37 +9,11 @@ declare(strict_types=1);
  * @contact  root@imoi.cn
  * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
  */
-use Hyperf\HttpMessage\Stream\SwooleFileStream;
 use Hyperf\HttpMessage\Stream\SwooleStream;
 use Hyperf\HttpServer\Router\Router;
 
-Router::get('/', static function () {
-    // Check if system is installed
-    $installed = file_exists(BASE_PATH . '/install.lock');
-
-    if (! $installed) {
-        $stream = new SwooleFileStream(BASE_PATH . '/public/install.html');
-        return (new \Hyperf\HttpMessage\Server\Response())
-            ->withHeader('Content-Type', 'text/html; charset=utf-8')
-            ->withBody($stream);
-    }
-
-    return 'welcome use mineAdmin';
-});
-
-Router::get('/install', static function () {
-    // 如果已安装，重定向到首页
-    if (file_exists(BASE_PATH . '/install.lock')) {
-        return (new \Hyperf\HttpMessage\Server\Response())
-            ->withHeader('Location', '/')
-            ->withStatus(302);
-    }
-
-    $stream = new SwooleFileStream(BASE_PATH . '/public/install.html');
-    return (new \Hyperf\HttpMessage\Server\Response())
-        ->withHeader('Content-Type', 'text/html; charset=utf-8')
-        ->withBody($stream);
-});
+// 安装相关路由（首页、安装向导）
+require_once BASE_PATH . '/config/install_routes.php';
 
 Router::get('/favicon.ico', static function () {
     return '';

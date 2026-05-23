@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  root@imoi.cn
  * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
  */
+use App\Http\Common\Middleware\InstallCheckMiddleware;
 use Hyperf\Validation\Middleware\ValidationMiddleware;
 use Mine\Support\Middleware\CorsMiddleware;
 use Mine\Support\Middleware\RequestIdMiddleware;
@@ -16,6 +17,8 @@ use Mine\Support\Middleware\TranslationMiddleware;
 
 return [
     'http' => [
+        // 安装检测中间件（未安装时拦截到安装页面）
+        InstallCheckMiddleware::class,
         // 请求ID中间件
         RequestIdMiddleware::class,
         // 多语言识别中间件

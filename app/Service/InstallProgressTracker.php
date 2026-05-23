@@ -35,8 +35,13 @@ class InstallProgressTracker
 
     public function __construct()
     {
-        $this->lockFile = BASE_PATH . '/runtime/.install.lock';
-        $this->logFile = BASE_PATH . '/runtime/.install.log';
+        // 统一使用 runtime/.install/ 目录下的锁文件，与 InstallService 保持一致
+        $installDir = BASE_PATH . '/runtime/.install';
+        if (! is_dir($installDir)) {
+            @mkdir($installDir, 0755, true);
+        }
+        $this->lockFile = $installDir . '/process.lock';
+        $this->logFile = $installDir . '/process.log';
     }
 
     public function acquireLock(): bool
@@ -298,6 +303,20 @@ class InstallProgressTracker
         $this->progress = [];
         $this->logs = [];
         $this->releaseLock();
+    }
+
+    /**
+     * 安装完成后清理进度和日志临时文件
+     */
+    public function cleanup(): void
+    {
+        $progressFile = $this->lockFile . '.progress';
+        if (file_exists($progressFile)) {
+            @unlink($progressFile);
+        }
+        if (file_exists($this->logFile)) {
+            @unlink($this->logFile);
+        }
     }
 
     public function hasFailedStep(): bool
