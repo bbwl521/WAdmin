@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 /**
- * This file is part of MineAdmin.
+ * This file is part of WAdmin.
  *
- * @link     https://www.mineadmin.com
- * @document https://doc.mineadmin.com
- * @contact  root@imoi.cn
- * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
+ * @link     https://github.com/bbwl521/WAdmin
+ * @document https://github.com/bbwl521/WAdmin
+ * @contact  admin@wadmin.local
+ * @license  https://github.com/bbwl521/WAdmin/blob/master/LICENSE
  */
 use Hyperf\Database\Commands\Ast\ModelRewriteKeyInfoVisitor;
 use Hyperf\Database\Commands\Ast\ModelRewriteSoftDeletesVisitor;
@@ -37,7 +37,7 @@ return [
         ],
         'cache' => [
             'handler' => RedisHandler::class,
-            'cache_key' => 'MineAdmin:%s:m:%s:%s:%s',
+            'cache_key' => 'WAdmin:%s:m:%s:%s:%s',
             'prefix' => 'model-cache',
             'ttl' => 86400 * 7,
             'empty_model_ttl' => 60,

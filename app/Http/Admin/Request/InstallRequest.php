@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 /**
- * This file is part of MineAdmin.
+ * This file is part of WAdmin.
  *
- * @link     https://www.mineadmin.com
- * @document https://doc.mineadmin.com
- * @contact  root@imoi.cn
- * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
+ * @link     https://github.com/bbwl521/WAdmin
+ * @document https://github.com/bbwl521/WAdmin
+ * @contact  admin@wadmin.local
+ * @license  https://github.com/bbwl521/WAdmin/blob/master/LICENSE
  */
 
 namespace App\Http\Admin\Request;
@@ -73,7 +73,7 @@ class InstallRequest extends FormRequest
             'DB_CHARSET' => $this->input('charset', 'utf8mb4'),
             'DB_COLLATION' => $this->input('collation', 'utf8mb4_unicode_ci'),
             'DB_PREFIX' => $this->input('prefix', ''),
-            'APP_NAME' => $this->input('app_name', 'MineAdmin'),
+            'APP_NAME' => $this->input('app_name', 'WAdmin'),
             'APP_URL' => $this->input('app_url', 'http://127.0.0.1:9501'),
             'REDIS_HOST' => $this->input('redis_host', '127.0.0.1'),
             'REDIS_PORT' => (int) $this->input('redis_port', 6379),

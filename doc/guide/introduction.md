@@ -1,6 +1,6 @@
 # 项目介绍
 
-WAdmin 是基于 [MineAdmin](https://www.mineadmin.com) 开发的后台管理系统，采用 [Hyperf 3.1](https://hyperf.io) 协程框架构建。
+WAdmin 是基于 Hyperf 3.1 协程框架 开发的后台管理系统，采用 [Hyperf 3.1](https://hyperf.io) 协程框架构建。
 
 ## 技术选型
 

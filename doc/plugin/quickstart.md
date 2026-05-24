@@ -31,7 +31,7 @@ plugins/feedback/
     "name": "意见反馈",
     "version": "1.0.0",
     "description": "收集用户意见与反馈，支持分类与状态追踪",
-    "author": { "name": "MineAdmin", "email": "root@imoi.cn" },
+    "author": { "name": "WAdmin", "email": "admin@wadmin.local" },
     "hyperf": ">=3.1",
     "mineadmin": ">=3.0",
     "autoload": { "psr-4": { "Plugin\\Feedback\\": "src/" } },

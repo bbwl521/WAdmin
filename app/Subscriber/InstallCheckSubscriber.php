@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 /**
- * This file is part of MineAdmin.
+ * This file is part of WAdmin.
  *
- * @link     https://www.mineadmin.com
- * @document https://doc.mineadmin.com
- * @contact  root@imoi.cn
- * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
+ * @link     https://github.com/bbwl521/WAdmin
+ * @document https://github.com/bbwl521/WAdmin
+ * @contact  admin@wadmin.local
+ * @license  https://github.com/bbwl521/WAdmin/blob/master/LICENSE
  */
 
 namespace App\Subscriber;
@@ -62,7 +62,7 @@ final class InstallCheckSubscriber implements ListenerInterface
         echo \PHP_EOL;
         echo "\033[34m" . self::ASCII_ART . "\033[0m";
         echo \PHP_EOL;
-        echo "\033[36m  Welcome to MineAdmin!\033[0m" . \PHP_EOL;
+        echo "\033[36m  Welcome to WAdmin!\033[0m" . \PHP_EOL;
         echo \PHP_EOL;
         echo "  \033[33m⚠️  System is not installed yet.\033[0m" . \PHP_EOL;
         echo \PHP_EOL;
@@ -73,7 +73,7 @@ final class InstallCheckSubscriber implements ListenerInterface
         echo "    \033[36m  php bin/hyperf.php mine:install\033[0m" . \PHP_EOL;
         echo \PHP_EOL;
         echo '  For more information, visit:' . \PHP_EOL;
-        echo "    \033[36m  https://doc.mineadmin.com\033[0m" . \PHP_EOL;
+        echo "    \033[36m  https://github.com/bbwl521/WAdmin\033[0m" . \PHP_EOL;
         echo \PHP_EOL;
     }
 

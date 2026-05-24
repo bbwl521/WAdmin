@@ -1,5 +1,5 @@
 <!--
- - MineAdmin Installed Plugins Management
+ - WAdmin Installed Plugins Management
 -->
 <script setup lang="ts">
 import { list, enable, disable, uninstall, publish } from '~/base/api/plugin'

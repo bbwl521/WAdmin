@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 /**
- * This file is part of MineAdmin.
+ * This file is part of WAdmin.
  *
- * @link     https://www.mineadmin.com
- * @document https://doc.mineadmin.com
- * @contact  root@imoi.cn
- * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
+ * @link     https://github.com/bbwl521/WAdmin
+ * @document https://github.com/bbwl521/WAdmin
+ * @contact  admin@wadmin.local
+ * @license  https://github.com/bbwl521/WAdmin/blob/master/LICENSE
  */
 
 namespace App\Http\Admin\Controller\Logstash;

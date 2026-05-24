@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 /**
- * This file is part of MineAdmin.
+ * This file is part of WAdmin.
  *
- * @link     https://www.mineadmin.com
- * @document https://doc.mineadmin.com
- * @contact  root@imoi.cn
- * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
+ * @link     https://github.com/bbwl521/WAdmin
+ * @document https://github.com/bbwl521/WAdmin
+ * @contact  admin@wadmin.local
+ * @license  https://github.com/bbwl521/WAdmin/blob/master/LICENSE
  */
 
 namespace App\Http\Common\Swagger;
@@ -18,11 +18,11 @@ use Hyperf\Swagger\Annotation as OA;
     openapi: '3.0.0',
     info: new OA\Info(
         version: '3.0.0',
-        description: 'MineAdmin 是一款基于 Hyperf 开发的开源管理系统，提供了用户管理、权限管理、系统设置、系统监控等功能。',
-        title: 'MineAdmin',
-        termsOfService: 'https://www.mineadmin.com',
-        contact: new OA\Contact(name: 'MineAdmin', url: 'https://www.mineadmin.com/about'),
-        license: new OA\License(name: 'Apache2.0', url: 'https://github.com/mineadmin/MineAdmin/blob/master/LICENSE')
+        description: 'WAdmin 是一款基于 Hyperf 开发的开源管理系统，提供了用户管理、权限管理、系统设置、系统监控等功能。',
+        title: 'WAdmin',
+        termsOfService: 'https://github.com/bbwl521/WAdmin',
+        contact: new OA\Contact(name: 'WAdmin', url: 'https://github.com/bbwl521/WAdmin/about'),
+        license: new OA\License(name: 'Apache2.0', url: 'https://github.com/bbwl521/WAdmin/blob/master/LICENSE')
     ),
     servers: [
         new OA\Server(
@@ -34,7 +34,7 @@ use Hyperf\Swagger\Annotation as OA;
             description: '演示服务',
         ),
     ],
-    externalDocs: new OA\ExternalDocumentation(description: '开发文档', url: 'https://doc.mineadmin.com')
+    externalDocs: new OA\ExternalDocumentation(description: '开发文档', url: 'https://github.com/bbwl521/WAdmin')
 )]
 #[OA\SecurityScheme(
     securityScheme: 'Bearer',

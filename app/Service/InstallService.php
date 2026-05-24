@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 /**
- * This file is part of MineAdmin.
+ * This file is part of WAdmin.
  *
- * @link     https://www.mineadmin.com
- * @document https://doc.mineadmin.com
- * @contact  root@imoi.cn
- * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
+ * @link     https://github.com/bbwl521/WAdmin
+ * @document https://github.com/bbwl521/WAdmin
+ * @contact  admin@wadmin.local
+ * @license  https://github.com/bbwl521/WAdmin/blob/master/LICENSE
  */
 
 namespace App\Service;
@@ -220,7 +220,7 @@ class InstallService
         $mysqlUsername = $dbConfig['username'];
         $mysqlPassword = $dbConfig['password'] ?? '';
         $mysqlPrefix = $dbConfig['prefix'] ?? '';
-        $siteName = $options['site_name'] ?? 'MineAdmin';
+        $siteName = $options['site_name'] ?? 'WAdmin';
 
         // 提取管理员账号
         $adminUsername = $adminAccount['username'];
@@ -316,7 +316,7 @@ class InstallService
             // 发射安装完成事件
             $this->eventDispatcher?->dispatch(
                 new InstallationCompletedEvent([
-                    'app_name' => $siteName ?? 'MineAdmin',
+                    'app_name' => $siteName ?? 'WAdmin',
                     'db_host' => $mysqlHostname,
                     'db_port' => $mysqlHostport,
                     'db_database' => $mysqlDatabase,

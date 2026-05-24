@@ -1,12 +1,12 @@
 import type { SystemSettings } from '#/global'
 /**
- * MineAdmin is committed to providing solutions for quickly building web applications
+ * WAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
  * For the full copyright and license information.
- * Thank you very much for using MineAdmin.
+ * Thank you very much for using WAdmin.
  *
- * @Author X.Mo<root@imoi.cn>
- * @Link   https://github.com/mineadmin
+ * @Author X.Mo<admin@wadmin.local>
+ * @Link   https://github.com/bbwl521/WAdmin
  */
 import type { Router, RouteRecordRaw } from 'vue-router'
 import dashboardRoute from '@/router/static-routes/dashboardRoute'
@@ -114,7 +114,7 @@ const useRouteStore = defineStore(
               component = moduleViews[`../../modules/${item.component}${suffix}`]
             }
             else {
-              // console.warn(`MineAdmin-UI: 路由 [${item.meta.title}] 找不到 ${item.component}${suffix} 页面`)
+              // console.warn(`WAdmin-UI: 路由 [${item.meta.title}] 找不到 ${item.component}${suffix} 页面`)
             }
           }
 

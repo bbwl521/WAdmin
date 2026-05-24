@@ -1,5 +1,5 @@
 /**
- * MineAdmin plugin API
+ * WAdmin plugin API
  */
 import type { PageList, ResponseStruct } from '#/global'
 

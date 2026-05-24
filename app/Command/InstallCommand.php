@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 /**
- * This file is part of MineAdmin.
+ * This file is part of WAdmin.
  *
- * @link     https://www.mineadmin.com
- * @document https://doc.mineadmin.com
- * @contact  root@imoi.cn
- * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
+ * @link     https://github.com/bbwl521/WAdmin
+ * @document https://github.com/bbwl521/WAdmin
+ * @contact  admin@wadmin.local
+ * @license  https://github.com/bbwl521/WAdmin/blob/master/LICENSE
  */
 
 namespace App\Command;
@@ -32,7 +32,7 @@ class InstallCommand
     {
         $status = $this->installService->getInstallStatus();
 
-        $this->output->title('MineAdmin Installation Check');
+        $this->output->title('WAdmin Installation Check');
         $this->output->section('Installation Status');
 
         $this->output->writeln([
@@ -58,7 +58,7 @@ class InstallCommand
                 '  <fg=blue>POST /admin/install/install</>',
                 '',
                 'For detailed installation instructions, please visit:',
-                '  <fg=blue>https://doc.mineadmin.com</>',
+                '  <fg=blue>https://github.com/bbwl521/WAdmin</>',
             ]);
         }
     }

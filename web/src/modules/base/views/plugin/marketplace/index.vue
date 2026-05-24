@@ -1,5 +1,5 @@
 <!--
- - MineAdmin Plugin Marketplace
+ - WAdmin Plugin Marketplace
 -->
 <script setup lang="ts">
 import { marketplace, marketplaceInstall, list as installedList } from '~/base/api/plugin'

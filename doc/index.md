@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: "WAdmin"
-  text: "MineAdmin 后台管理系统"
+  text: "WAdmin 后台管理系统"
   tagline: 基于 Hyperf 3.1 的高性能后台管理系统
   actions:
     - theme: brand
