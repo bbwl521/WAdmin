@@ -206,12 +206,41 @@ class InstallController extends AbstractController
         try {
             $data = $this->request->all();
 
+            // 必填字段校验
+            $host = $data['host'] ?? '';
+            $database = $data['database'] ?? '';
+            $username = $data['username'] ?? '';
+
+            if ($host === '') {
+                return $this->error('数据库主机地址 (host) 不能为空');
+            }
+            if ($database === '') {
+                return $this->error('数据库名称 (database) 不能为空');
+            }
+            if ($username === '') {
+                return $this->error('数据库用户名 (username) 不能为空');
+            }
+
+            // 管理员账号校验
+            $adminUsername = trim($data['admin_username'] ?? 'admin');
+            if ($adminUsername === '') {
+                return $this->error('管理员用户名不能为空');
+            }
+
+            $adminPassword = $data['admin_password'] ?? null;
+            if ($adminPassword === null || $adminPassword === '') {
+                return $this->error('管理员密码不能为空');
+            }
+            if (mb_strlen($adminPassword) < 6) {
+                return $this->error('管理员密码长度不能少于 6 位');
+            }
+
             $config = [
                 'DB_DRIVER' => 'mysql',
-                'DB_HOST' => $data['host'] ?? 'localhost',
+                'DB_HOST' => $host,
                 'DB_PORT' => (int) ($data['port'] ?? 3306),
-                'DB_DATABASE' => $data['database'] ?? '',
-                'DB_USERNAME' => $data['username'] ?? 'root',
+                'DB_DATABASE' => $database,
+                'DB_USERNAME' => $username,
                 'DB_PASSWORD' => $data['password'] ?? '',
                 'DB_CHARSET' => $data['charset'] ?? 'utf8mb4',
                 'DB_COLLATION' => $data['collation'] ?? 'utf8mb4_unicode_ci',
@@ -227,23 +256,22 @@ class InstallController extends AbstractController
             ];
 
             $options = [
-                'admin_username' => $data['admin_username'] ?? 'admin',
-                'admin_password' => $data['admin_password'] ?? null,
                 'create_db' => (bool) ($data['create_db'] ?? true),
                 'run_migrations' => (bool) ($data['run_migrations'] ?? true),
                 'seed_data' => (bool) ($data['seed_data'] ?? true),
             ];
 
             $result = $this->installService->installation(
-                mysqlHostname: $data['host'] ?? 'localhost',
+                mysqlHostname: $host,
                 mysqlHostport: (int) ($data['port'] ?? 3306),
-                mysqlDatabase: $data['database'] ?? '',
-                mysqlUsername: $data['username'] ?? 'root',
+                mysqlDatabase: $database,
+                mysqlUsername: $username,
                 mysqlPassword: $data['password'] ?? '',
                 mysqlPrefix: $data['prefix'] ?? '',
-                adminUsername: $data['admin_username'] ?? 'admin',
-                adminPassword: $data['admin_password'] ?? null,
+                adminUsername: $adminUsername,
+                adminPassword: $adminPassword,
                 siteName: $data['app_name'] ?? null,
+                options: $options,
             );
 
             return $this->success([

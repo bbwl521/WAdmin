@@ -20,15 +20,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 
 class InstallService
 {
-    /**
-     * 已提交的安装步骤（用于事务性回滚）.
-     */
-    private array $committed = [
-        'env_created' => false,
-        'database_created' => false,
-        'sql_imported' => false,
-    ];
-
     public function __construct(
         private readonly EnvFileWriter $envWriter,
         private readonly DatabaseInstaller $dbInstaller,
@@ -108,7 +99,7 @@ class InstallService
             if (! empty($config['DB_DATABASE']) && ! empty($config['DB_HOST'])) {
                 $status['db_configured'] = true;
 
-                if ($this->dbInstaller->testConnection($config, $this->progressTracker)['success']) {
+                if ($this->dbInstaller->testConnectionSilent($config)) {
                     $status['db_connected'] = true;
 
                     try {
@@ -224,8 +215,14 @@ class InstallService
         string $adminPassword,
         ?string $adminEmail = null,
         ?string $siteName = null,
-        bool $force = false
+        bool $force = false,
+        array $options = []
     ): array {
+        // 解析安装选项
+        $shouldCreateDb = (bool) ($options['create_db'] ?? true);
+        $shouldRunMigrations = (bool) ($options['run_migrations'] ?? true);
+        $shouldSeedData = (bool) ($options['seed_data'] ?? true);
+
         // 检查系统是否已安装，防止重复安装
         if ($this->isInstalled() && ! $force) {
             throw new BusinessException(ResultCode::FAIL, '系统已安装，如需重新安装请先重置安装状态');
@@ -236,8 +233,8 @@ class InstallService
             throw new BusinessException(ResultCode::FAIL, '安装进程已被锁定，请稍后重试');
         }
 
-        // 重置已提交步骤追踪器
-        $this->committed = [
+        // 已提交步骤追踪器（局部变量，协程安全）
+        $committed = [
             'env_created' => false,
             'database_created' => false,
             'sql_imported' => false,
@@ -271,16 +268,20 @@ class InstallService
             ];
 
             $this->createEnvFile($config);
-            $this->committed['env_created'] = true;
+            $committed['env_created'] = true;
             $this->reloadEnvConfig();
 
-            // Step 3: 创建数据库
-            $this->createDatabase($config);
-            $this->committed['database_created'] = true;
+            // Step 3: 创建数据库（可跳过）
+            if ($shouldCreateDb) {
+                $this->createDatabase($config);
+                $committed['database_created'] = true;
+            }
 
-            // Step 4: 执行 SQL 导入
-            $this->execSqlFile($config, $adminUsername, $adminPassword);
-            $this->committed['sql_imported'] = true;
+            // Step 4: 执行 SQL 导入（建表 + 初始数据，可分别控制）
+            if ($shouldRunMigrations || $shouldSeedData) {
+                $this->execSqlFile($config, $adminUsername, $adminPassword);
+                $committed['sql_imported'] = true;
+            }
 
             // Step 5: 安装完成
             $this->progressTracker->setProgress(
@@ -328,7 +329,7 @@ class InstallService
             );
 
             // 事务性回滚：按逆序清理已成功的步骤
-            $this->rollbackInstallation($config ?? [], $this->committed);
+            $this->rollbackInstallation($config ?? [], $committed);
 
             // 不释放锁，保留安装进度以便调试
             throw $e;

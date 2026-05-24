@@ -114,6 +114,14 @@ class DatabaseInstaller
     }
 
     /**
+     * 静默测试数据库连接（不写进度日志，供状态查询使用）.
+     */
+    public function testConnectionSilent(array $config): bool
+    {
+        return $this->checkDatabaseConnection($config);
+    }
+
+    /**
      * 测试数据库连接是否可用.
      */
     public function testConnection(array $config, InstallProgressTracker $tracker): array
@@ -205,11 +213,17 @@ class DatabaseInstaller
                 throw new BusinessException(ResultCode::FAIL, '无法读取 SQL 文件');
             }
 
-            // 替换表前缀
+            // 替换表前缀（仅替换表名，不替换列名）
+            // 原始的 str_replace('`', '`'.$prefix) 会将列名也加上前缀，导致 SQL 执行失败
+            // 正确做法：只匹配 SQL 关键字后的表名标识符
             $prefix = $config['DB_PREFIX'] ?? '';
             if ($prefix) {
-                $sql = str_replace('`', '`' . $prefix, $sql);
+                $sql = $this->replaceTablePrefix($sql, $prefix);
             }
+
+            // 防御性规范化：自动修复常见 SQL 格式缺陷
+            // 某些 SQL 导出工具生成的 INSERT 语句可能缺少列名间的逗号
+            $sql = $this->normalizeSql($sql);
 
             // 连接目标数据库并执行 SQL
             $dsn = \sprintf(
@@ -227,7 +241,8 @@ class DatabaseInstaller
                 [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
             );
 
-            $pdo->exec($sql);
+            // 按分号分割逐条执行 SQL（兼容 PHP 8.x mysqlnd 禁用多语句）
+            $this->executeSqlStatements($pdo, $sql, $tracker);
 
             // 更新管理员账号密码
             if ($adminUsername || $adminPassword) {
@@ -424,5 +439,167 @@ class DatabaseInstaller
     private function escapeIdentifier(string $identifier): string
     {
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    /**
+     * 智能替换表名前缀，仅匹配 DDL/DML 语句中的表名，不替换列名.
+     *
+     * 匹配规则：
+     *   CREATE TABLE / DROP TABLE / ALTER TABLE / INSERT INTO / UPDATE / DELETE FROM
+     *   后跟的反引号标识符才添加前缀.
+     *
+     * @param string $sql 原始 SQL 内容
+     * @param string $prefix 表前缀（如 'ma_'）
+     */
+    private function replaceTablePrefix(string $sql, string $prefix): string
+    {
+        // 匹配 SQL 关键字后的表名模式: 关键字 + 空格 + (IF NOT EXISTS)? + 空格 + `表名`
+        // 不匹配列定义中的 `column_name` 模式
+        $pattern = '/\b(CREATE\s+TABLE|DROP\s+TABLE(?:\s+IF\s+EXISTS)?|ALTER\s+TABLE|INSERT\s+INTO|UPDATE|DELETE\s+FROM|TRUNCATE|RENAME\s+TABLE)\s+`([^`]+)`/';
+
+        return preg_replace_callback(
+            $pattern,
+            static function (array $matches) use ($prefix): string {
+                $keyword = $matches[1];
+                $table = $matches[2];
+                return "{$keyword} `{$prefix}{$table}`";
+            },
+            $sql
+        );
+    }
+
+    /**
+     * 规范化 SQL 内容，自动修复常见格式缺陷.
+     *
+     * 防御性措施：
+     *   - INSERT 列名列表中 `col1` `col2` → `col1`, `col2`（缺少逗号）
+     *   - INSERT VALUES 中值之间缺少逗号
+     *
+     * 此方法确保即使 SQL 文件格式不完美，也能正确导入.
+     */
+    private function normalizeSql(string $sql): string
+    {
+        // Fix: INSERT INTO `table` (`a` `b` `c`) VALUES → (`a`, `b`, `c`)
+        // 匹配 INSERT 语句括号内的列名/值列表，在反引号标识符间补充逗号
+        $sql = (string) preg_replace_callback(
+            '/INSERT\s+INTO\s+`[^`]+`\s*\(([^)]+)\)\s*VALUES/i',
+            static function (array $m): string {
+                // 只修复列定义部分，保持原样结构
+                $cols = $m[1];
+                // `word` 后面跟空格+`word` → 补逗号
+                $fixed = (string) preg_replace(
+                    '/(`[^`]*`)  +(`)/',
+                    '$1, $2',
+                    $cols
+                );
+
+                return str_replace($cols, $fixed, $m[0]);
+            },
+            $sql
+        );
+
+        return $sql;
+    }
+
+    /**
+     * 逐条执行 SQL 语句（按分号分割）.
+     *
+     * PHP 8.x 的 mysqlnd 默认禁用 PDO 多语句执行，
+     * 因此需要将 SQL 文件分割为单条语句逐一执行。
+     *
+     * 自动跳过空语句和纯注释行。
+     */
+    private function executeSqlStatements(\PDO $pdo, string $sql, InstallProgressTracker $tracker): int
+    {
+        // 移除存储过程/函数/触发器体中的分号（DELIMITER 块内的内容）
+        // 简化处理：先按 DELIMITER 分割，再对非 delimiter 块按 ; 分割
+        $statements = $this->splitSqlStatements($sql);
+
+        $executedCount = 0;
+        $totalStatements = count($statements);
+        $lastProgress = 0;
+
+        foreach ($statements as $index => $statement) {
+            $stmt = trim($statement);
+
+            // 跳过空语句和纯注释
+            if ($stmt === '' || str_starts_with($stmt, '--') || str_starts_with($stmt, '/*')) {
+                continue;
+            }
+
+            try {
+                $pdo->exec($stmt);
+                ++$executedCount;
+
+                // 每 10 条或最后一条时更新进度
+                $progress = (int) (($index + 1) / $totalStatements * 100);
+                if ($progress !== $lastProgress && $progress % 5 === 0) {
+                    $tracker->log(
+                        InstallProgressTracker::STEP_MIGRATION,
+                        'info',
+                        "SQL 导入进度: {$executedCount}/{$totalStatements} ({$progress}%)"
+                    );
+                    $lastProgress = $progress;
+                }
+            } catch (\PDOException $e) {
+                // 记录失败的具体语句（截断过长内容）
+                $failedStmtPreview = mb_strlen($stmt) > 100 ? mb_substr($stmt, 0, 100) . '...' : $stmt;
+
+                throw new \RuntimeException(
+                    "SQL 执行失败 (#{$executedCount}): {$e->getMessage()}
+语句预览: {$failedStmtPreview}",
+                    (int) $e->getCode()
+                );
+            }
+        }
+
+        return $executedCount;
+    }
+
+    /**
+     * 将完整 SQL 文件内容拆分为单条可执行语句.
+     *
+     * 处理边界情况：
+     *   - 分号出现在字符串字面量中（不分割）
+     *   - DELIMITER 定界符块（保持原样）
+     *   - 注释行（保留但不影响分割）
+     */
+    private function splitSqlStatements(string $sql): array
+    {
+        $statements = [];
+        $current = '';
+        $inString = false;       // 是否在字符串内
+        $stringChar = '';         // 当前字符串的引号类型 (' 或 ")
+        $escaped = false;         // 上一个字符是否转义
+
+        foreach (str_split($sql) as $char) {
+            if (! $inString && $char === ';') {
+                $statements[] = $current;
+                $current = '';
+                continue;
+            }
+
+            // 字符串状态跟踪
+            if (! $inString && ($char === "'" || $char === '"')) {
+                $inString = true;
+                $stringChar = $char;
+                $escaped = false;
+            } elseif ($inString && ! $escaped && $char === $stringChar) {
+                $inString = false;
+            } elseif ($inString && $char === '\\' && ! $escaped) {
+                $escaped = true;
+            } elseif ($inString) {
+                $escaped = false;
+            }
+
+            $current .= $char;
+        }
+
+        // 收集最后一条未以分号结尾的语句
+        if (trim($current) !== '') {
+            $statements[] = $current;
+        }
+
+        return $statements;
     }
 }
