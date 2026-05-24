@@ -235,44 +235,32 @@ class InstallController extends AbstractController
                 return $this->error('管理员密码长度不能少于 6 位');
             }
 
-            $config = [
-                'DB_DRIVER' => 'mysql',
-                'DB_HOST' => $host,
-                'DB_PORT' => (int) ($data['port'] ?? 3306),
-                'DB_DATABASE' => $database,
-                'DB_USERNAME' => $username,
-                'DB_PASSWORD' => $data['password'] ?? '',
-                'DB_CHARSET' => $data['charset'] ?? 'utf8mb4',
-                'DB_COLLATION' => $data['collation'] ?? 'utf8mb4_unicode_ci',
-                'DB_PREFIX' => $data['prefix'] ?? '',
-                'APP_NAME' => $data['app_name'] ?? 'MineAdmin',
-                'APP_URL' => $data['app_url'] ?? 'http://127.0.0.1:9501',
-                'APP_ENV' => $data['app_env'] ?? 'dev',
-                'APP_DEBUG' => $data['app_debug'] ?? 'false',
-                'REDIS_HOST' => $data['redis_host'] ?? '127.0.0.1',
-                'REDIS_PORT' => (int) ($data['redis_port'] ?? 6379),
-                'REDIS_AUTH' => $data['redis_auth'] ?? '',
-                'REDIS_DB' => (int) ($data['redis_db'] ?? 0),
+            // 数据库配置（单一数据源，Service 不再重复构造）
+            $dbConfig = [
+                'host' => $host,
+                'port' => (int) ($data['port'] ?? 3306),
+                'database' => $database,
+                'username' => $username,
+                'password' => $data['password'] ?? '',
+                'prefix' => $data['prefix'] ?? '',
             ];
 
+            // 管理员账号
+            $adminAccount = [
+                'username' => $adminUsername,
+                'password' => $adminPassword,
+            ];
+
+            // 安装选项
             $options = [
+                'dry_run' => (bool) ($data['dry_run'] ?? false),
                 'create_db' => (bool) ($data['create_db'] ?? true),
                 'run_migrations' => (bool) ($data['run_migrations'] ?? true),
                 'seed_data' => (bool) ($data['seed_data'] ?? true),
+                'site_name' => $data['app_name'] ?? 'MineAdmin',
             ];
 
-            $result = $this->installService->installation(
-                mysqlHostname: $host,
-                mysqlHostport: (int) ($data['port'] ?? 3306),
-                mysqlDatabase: $database,
-                mysqlUsername: $username,
-                mysqlPassword: $data['password'] ?? '',
-                mysqlPrefix: $data['prefix'] ?? '',
-                adminUsername: $adminUsername,
-                adminPassword: $adminPassword,
-                siteName: $data['app_name'] ?? null,
-                options: $options,
-            );
+            $result = $this->installService->installation($dbConfig, $adminAccount, $options);
 
             return $this->success([
                 'installed' => $result['success'],

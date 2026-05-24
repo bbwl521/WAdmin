@@ -427,7 +427,7 @@ class DatabaseInstaller
         }
 
         if ($adminPassword) {
-            $hashedPassword = password_hash($adminPassword, \PASSWORD_DEFAULT);
+            $hashedPassword = password_hash($adminPassword, \PASSWORD_BCRYPT);
             $stmt = $pdo->prepare("UPDATE `{$userTable}` SET `password` = ? WHERE `id` = 1");
             $stmt->execute([$hashedPassword]);
         }
@@ -451,7 +451,7 @@ class DatabaseInstaller
      * @param string $sql 原始 SQL 内容
      * @param string $prefix 表前缀（如 'ma_'）
      */
-    private function replaceTablePrefix(string $sql, string $prefix): string
+    public function replaceTablePrefix(string $sql, string $prefix): string
     {
         // 匹配 SQL 关键字后的表名模式: 关键字 + 空格 + (IF NOT EXISTS)? + 空格 + `表名`
         // 不匹配列定义中的 `column_name` 模式
@@ -522,8 +522,9 @@ class DatabaseInstaller
         foreach ($statements as $index => $statement) {
             $stmt = trim($statement);
 
-            // 跳过空语句和纯注释
-            if ($stmt === '' || str_starts_with($stmt, '--') || str_starts_with($stmt, '/*')) {
+            // 剥离前导注释行后判断是否为空（修复：注释行后的 SQL 语句被错误跳过的问题）
+            $stmt = self::stripLeadingComments($stmt);
+            if ($stmt === '') {
                 continue;
             }
 
@@ -564,6 +565,33 @@ class DatabaseInstaller
      *   - DELIMITER 定界符块（保持原样）
      *   - 注释行（保留但不影响分割）
      */
+        /**
+     * 剥离 SQL 语句前导的注释行（-- 行注释和 / * ... * / 块注释），
+     * 保留注释之后的有效 SQL 内容.
+     */
+    private static function stripLeadingComments(string $sql): string
+    {
+        $sql = ltrim($sql);
+        while ($sql !== '') {
+            if (str_starts_with($sql, '--')) {
+                $pos = strpos($sql, "\n");
+                if ($pos === false) {
+                    return '';
+                }
+                $sql = ltrim(substr($sql, $pos + 1));
+            } elseif (str_starts_with($sql, '/*')) {
+                $pos = strpos($sql, '*/', 2);
+                if ($pos === false) {
+                    return '';
+                }
+                $sql = ltrim(substr($sql, $pos + 2));
+            } else {
+                break;
+            }
+        }
+        return $sql;
+    }
+
     private function splitSqlStatements(string $sql): array
     {
         $statements = [];

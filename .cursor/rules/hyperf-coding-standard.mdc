@@ -1,0 +1,259 @@
+---
+description: MineAdmin/Hyperf 3.1 工业级 AI 编程规范 — PHP 8.2+ 面向契约编程
+alwaysApply: true
+enabled: true
+updatedAt: 2026-05-24T00:00:00.000Z
+provider: MineAdmin
+---
+
+# Hyperf 3.1 · MineAdmin 工业级 AI 编程规范
+
+> **适用范围**：MineAdmin v3.x（Hyperf 3.1.x），PHP 8.2+，Swoole 5.0+
+
+---
+
+## 一、环境与版本基线
+
+- **PHP 版本**：强制 ≥ 8.2。必须使用现代语法：具名参数、`match` 表达式、`?->` 空安全、`readonly` 属性、`enum`、一等可调用语法（`$fn(...)`）
+- **严格类型**：每个 PHP 文件头部 `<?php` 后紧跟 `declare(strict_types=1);`，无例外
+- **类型全覆盖**：所有方法参数、返回值、类属性必须有类型声明。接口边界可用 `mixed`，内部逻辑优先 union types
+- **Composer**：Hyperf 3.1.* 全家桶；`config.sort-packages: true`，新依赖必须语义化版本约束
+
+## 二、MineAdmin 分层架构与职责
+
+### 2.1 层级调用链（铁律）
+
+```
+Controller → Service → Repository → Model
+   ↕            ↕
+  Request     Event
+   ↕            ↕
+  Middleware  Subscriber
+```
+
+- **Controller**（`app/Http/{Admin,Api}/Controller/`）：处理 HTTP 输入输出，调用 Service，返回 `Result` 对象，禁止包含业务逻辑
+- **Service**（`app/Service/`）：业务编排、事务管理、事件派发。继承 `App\Service\IService`，注入 Repository
+- **Repository**（`app/Repository/`）：数据访问层，封装查询逻辑。继承 `App\Repository\IRepository`，注入 Model。绝对禁止在 Controller 直接调用 Repository 或 Model
+- **Model**（`app/Model/`）：继承 `Hyperf\DbConnection\Model\Model as MineModel`，声明 `$table`、`$fillable`、`$casts`、关联关系。使用 `#[Property]` 注解或 PHPDoc `@property` 声明字段类型
+
+### 2.2 依赖注入
+
+- 构造函数注入使用 `private readonly` 属性提升语法（PHP 8.1+），无需 `#[Inject]` 注解
+- 面向契约编程：类型声明优先使用接口（如 `RequestInterface`、`ContainerInterface`），容器自动解析实现
+- 禁止在业务代码中 `new` 需要 DI 的类；工具类实例化统一通过 `make()` 或容器
+
+### 2.3 Request 表单校验
+
+- 每个需要校验的 Controller Action 必须创建对应 Request 类（`app/Http/{Admin,Api}/Request/`），继承 `App\Http\Common\Request\AbstractRequest`
+- Request 类实现 `rules()` 和 `messages()`，控制器通过方法注入自动校验
+- 禁止在 Controller 中手动校验参数
+
+### 2.4 VO（值对象）
+
+- 复杂返回结构使用 VO 类包装（`app/Http/{Admin,Api}/Vo/`），继承 `App\Http\Common\Vo`
+- VO 声明只读属性 + `#[Property]` 注解，用于 Swagger 文档生成
+
+## 三、HTTP 控制器规范
+
+### 3.1 控制器定义
+
+```php
+#[HyperfServer(name: 'http')]
+final class FooController extends AbstractController
+{
+    public function __construct(
+        private readonly FooService $service,
+        private readonly RequestInterface $request
+    ) {}
+}
+```
+
+- 控制器类必须 `final`，防止被继承
+- 路由注解 `#[Get]` / `#[Post]` / `#[Put]` / `#[Delete]` 必须声明 `path`、`operationId`、`summary`、`tags`、`security`
+- `tags` 格式：`['admin:模块名']` 或 `['api:模块名']`
+- 返回类型固定 `Result`，通过 `$this->success($data)` / `$this->error($msg)` 构建响应
+- Swagger 响应注解 `#[ResultResponse(instance: Result::class)]` 必须标注
+
+### 3.2 Middleware 中间件
+
+- 位于 `app/Http/{Admin,Api,Common}/Middleware/`，通过 `config/autoload/middlewares.php` 全局注册或路由注解局部使用
+- 中间件必须 `final`，单一职责，命名体现动作（如 `InstallCheckMiddleware`）
+
+## 四、Service 服务层规范
+
+### 4.1 基础约定
+
+```php
+/**
+ * @extends IService<FooModel>
+ */
+final class FooService extends IService
+{
+    public function __construct(
+        protected readonly FooRepository $repository
+    ) {}
+
+    public function getRepository(): FooRepository
+    {
+        return $this->repository;
+    }
+}
+```
+
+- Service 类 `final`，继承 `IService`，泛型注解 `@extends IService<Model>` 必须标注
+- 必须实现 `getRepository()`，返回对应 Repository
+- 复杂业务逻辑拆分私有方法，单一职责
+
+### 4.2 事务使用
+
+```php
+use Hyperf\DbConnection\Db;
+
+Db::transaction(function () use ($data) {
+    // 多表操作
+});
+```
+
+- 多表写操作必须包裹在 `Db::transaction()` 中
+- 事务内可抛出异常触发回滚
+
+### 4.3 事件驱动
+
+- 关键业务节点必须派发事件（如 `InstallationCompletedEvent`）
+- 事件类位于 `app/Event/`，Subscriber 位于 `app/Subscriber/` 或 `app/Http/{Admin,Api}/Subscriber/`
+- Subscriber 通过 `#[Listener]` 注解或 `ConfigProvider` 注册
+
+## 五、Repository 数据访问规范
+
+### 5.1 基础约定
+
+```php
+final class FooRepository extends IRepository
+{
+    public function __construct(
+        protected readonly FooModel $model
+    ) {}
+
+    public function enablePageOrderBy(): bool { return false; }
+}
+```
+
+- Repository `final`，继承 `IRepository`，注入 Model
+- 列表查询使用 `$this->perQuery($this->getQuery(), $params)` 自动处理分页排序
+- `handleSearch(Builder $query, array $params): Builder` 封装搜索条件，使用 `->when()` 链式调用
+
+### 5.2 数据库安全
+
+- **绝对禁止** SQL 字符串拼接或插值（`"WHERE id = $id"`）
+- 必须使用 PDO 预处理或 Hyperf Query Builder 的参数绑定
+- 所有数据库操作包裹 `try/catch`，catch 块必须 `Log::error()` 记录
+
+## 六、Model 模型规范
+
+### 6.1 基础定义
+
+```php
+/**
+ * @property int $id 主键
+ * @property string $name 名称
+ * @property Carbon $created_at
+ */
+final class Foo extends MineModel
+{
+    protected ?string $table = 'foo';
+    protected array $fillable = ['name'];
+    protected array $casts = [
+        'id' => 'integer',
+        'meta' => MetaCast::class,
+    ];
+}
+```
+
+- Model 类 `final`，PHPDoc `@property` 声明所有字段（类型 + 中文注释）
+- `$casts` 中自定义 Cast 类位于 `app/Model/Casts/`
+- 状态枚举 `enum` 位于 `app/Model/Enums/{Domain}/`，命名体现领域（如 `User\Status`）
+- 关联方法（`belongsTo`、`hasMany`、`belongsToMany`）返回类型必须声明
+
+## 七、异常与日志规范
+
+- **异常**：业务异常统一抛 `App\Exception\BusinessException`，携带 `ResultCode` 枚举码
+- **异常处理器**：位于 `app/Exception/Handler/`，通过 `ConfigProvider` 注册
+- **日志**：使用 Hyperf `Log::error()` / `Log::info()`，严禁静默吞异常（空 catch 块）
+- **错误码**：`App\Http\Common\ResultCode` 枚举统一管理
+
+## 八、测试规范
+
+- 测试工具链：PHPUnit + Mockery，禁止混用
+- 涉及 Hyperf protected 方法 Mock 时，必须调用 `->shouldAllowMockingProtectedMethods()`
+- 测试类位于 `tests/`，命名空间 `HyperfTests\`
+- 提交前执行：`composer test` 确保用例通过
+
+## 九、代码质量流水线
+
+提交代码前必须通过以下检查：
+
+```bash
+composer cs-fix      # 代码格式化（PSR-12 + PER-CS 2.0 + Symfony）
+composer analyse     # PHPStan 2.x 静态分析
+```
+
+- `.php-cs-fixer.php` 已锁定规则集，禁止随意修改
+- `phpstan.neon` 级别逐步提升至 `level 8+`
+
+## 十、配置与目录约定
+
+### 10.1 配置文件
+
+- 业务配置：`config/autoload/{模块名}.php`，通过 `config('模块名.key')` 读取
+- 路由配置：`config/routes.php`（主路由）、`config/install_routes.php`（安装路由）
+- 禁止硬编码环境值（DB 连接、Redis、Cache Key 等），一律走配置文件
+
+### 10.2 目录结构
+
+```
+app/
+├── Command/          # 命令行（php bin/hyperf.php mine:xxx）
+├── Event/            # 事件类
+├── Exception/        # 异常与处理器
+├── Http/
+│   ├── Admin/        # 后台 API（Controller/Request/Middleware/Subscriber/Vo）
+│   ├── Api/          # 前台 API
+│   └── Common/       # 公共基类、Result、ResultCode
+├── Library/          # 自定义库（如 DataPermission AOP）
+├── Model/            # 数据模型（Casts/Enums/领域子目录）
+├── Repository/       # 数据仓库
+├── Schema/           # JSON Schema 定义
+├── Service/          # 业务服务
+└── Subscriber/       # 全局事件订阅者
+```
+
+### 10.3 新增模块检查清单
+
+1. 创建 Model + Repository + Service → 注册 `ConfigProvider`
+2. 创建 Controller + Request + Vo → 配置路由
+3. 数据库迁移 + Seed 数据
+4. Swagger 注解完整
+5. 权限规则（Casbin）配置
+6. 中间件注册（如需要）
+7. PHPUnit 测试覆盖核心逻辑
+
+## 十一、性能与协程约束
+
+- Swoole 常驻内存：禁止使用 `$_GET`/`$_POST`/`$_SERVER` 等超全局变量，使用 `RequestInterface`
+- 禁止全局状态：不在类属性中存储请求级状态（协程切换不安全），使用 `Context` 存取
+- 数据库连接：自动归还连接池，无需手动释放
+- 缓存 Key：必须在对应配置文件中定义常量，禁止硬编码字符串
+- 队列消费：所有 Job 必须设计为可重复执行（幂等性）
+
+## 十二、禁止事项清单
+
+| 禁止项 | 说明 |
+|--------|------|
+| `mixed` 类型在内部方法中 | 外部 API 用 `mixed`，内部逻辑用具体类型 |
+| 控制器中写业务逻辑 | 控制器只做参数接收和响应返回 |
+| SQL 字符串拼接 | 必须 Query Builder 或预处理 |
+| 静默吞异常 | catch 块必须记录日志或重新抛出 |
+| 硬编码路径/Key/配置值 | 统一走 `config()` |
+| 绕过 Service 直接调 Repository | 严格遵守 Controller→Service→Repository 调用链 |
+| 在循环中执行 SQL | 使用批量操作或 `chunk()` |
+| 超全局变量 | `$_GET`、`$_POST`、`$_SESSION` 等全部禁用 |

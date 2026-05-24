@@ -204,21 +204,31 @@ class InstallService
     //  核心编排：完整安装流程 + 事务性回滚
     // ============================================================
 
+    /**
+     * @param array{dry_run?:bool,create_db?:bool,run_migrations?:bool,seed_data?:bool,site_name?:string} $options
+     */
     public function installation(
-        string $mysqlHostname,
-        int $mysqlHostport,
-        string $mysqlDatabase,
-        string $mysqlUsername,
-        string $mysqlPassword,
-        string $mysqlPrefix,
-        string $adminUsername,
-        string $adminPassword,
-        ?string $adminEmail = null,
-        ?string $siteName = null,
-        bool $force = false,
-        array $options = []
+        array $dbConfig,
+        array $adminAccount,
+        array $options = [],
+        bool $force = false
     ): array {
+        // 提取数据库配置
+        $mysqlHostname = $dbConfig['host'];
+        $mysqlHostport = (int) ($dbConfig['port'] ?? 3306);
+        $mysqlDatabase = $dbConfig['database'];
+        $mysqlUsername = $dbConfig['username'];
+        $mysqlPassword = $dbConfig['password'] ?? '';
+        $mysqlPrefix = $dbConfig['prefix'] ?? '';
+        $siteName = $options['site_name'] ?? 'MineAdmin';
+
+        // 提取管理员账号
+        $adminUsername = $adminAccount['username'];
+        $adminPassword = $adminAccount['password'];
+        $adminEmail = $adminAccount['email'] ?? null;
+
         // 解析安装选项
+        $dryRun = (bool) ($options['dry_run'] ?? false);
         $shouldCreateDb = (bool) ($options['create_db'] ?? true);
         $shouldRunMigrations = (bool) ($options['run_migrations'] ?? true);
         $shouldSeedData = (bool) ($options['seed_data'] ?? true);
@@ -226,6 +236,11 @@ class InstallService
         // 检查系统是否已安装，防止重复安装
         if ($this->isInstalled() && ! $force) {
             throw new BusinessException(ResultCode::FAIL, '系统已安装，如需重新安装请先重置安装状态');
+        }
+
+        // 干跑模式：仅校验参数、环境检测，不执行实际操作
+        if ($dryRun) {
+            return $this->dryRunInstallation($dbConfig, $adminAccount, $options);
         }
 
         // 获取安装锁
@@ -264,7 +279,7 @@ class InstallService
                 'DB_USERNAME' => $mysqlUsername,
                 'DB_PASSWORD' => $mysqlPassword,
                 'DB_PREFIX' => $mysqlPrefix,
-                'APP_NAME' => $siteName ?? 'MineAdmin',
+                'APP_NAME' => $siteName,
             ];
 
             $this->createEnvFile($config);
@@ -334,6 +349,84 @@ class InstallService
             // 不释放锁，保留安装进度以便调试
             throw $e;
         }
+    }
+
+    // ============================================================
+    //  干跑预览模式
+    // ============================================================
+
+    /**
+     * 干跑模式：校验参数和环境，预览即将执行的 SQL 语句，不执行实际操作.
+     *
+     * @param array{host:string,port:int,database:string,username:string,password?:string,prefix?:string} $dbConfig
+     * @param array{username:string,password:string,email?:string} $adminAccount
+     * @param array{dry_run?:bool,create_db?:bool,run_migrations?:bool,seed_data?:bool,site_name?:string} $options
+     */
+    private function dryRunInstallation(array $dbConfig, array $adminAccount, array $options): array
+    {
+        $envResult = $this->checkEnvironment();
+
+        // 读取 SQL 文件并预览
+        $sqlFile = BASE_PATH . '/databases/mineadmin.sql';
+        $sqlPreview = null;
+        $sqlStatements = [];
+
+        if (file_exists($sqlFile)) {
+            $sql = file_get_contents($sqlFile);
+            if ($sql !== false) {
+                $prefix = $dbConfig['prefix'] ?? '';
+                if ($prefix) {
+                    $sql = $this->dbInstaller->replaceTablePrefix($sql, $prefix);
+                }
+                // 提取前 10 条非空语句用于预览
+                $rawStatements = explode(';', $sql);
+                $count = 0;
+                foreach ($rawStatements as $stmt) {
+                    $trimmed = trim($stmt);
+                    if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '/*')) {
+                        continue;
+                    }
+                    $sqlStatements[] = mb_strlen($trimmed) > 120
+                        ? mb_substr($trimmed, 0, 120) . '...'
+                        : $trimmed;
+                    if (++$count >= 10) {
+                        break;
+                    }
+                }
+                $sqlPreview = \count($sqlStatements) . ' 条语句（已截断预览）';
+            }
+        }
+
+        // 测试数据库连接
+        $connResult = $this->testDatabaseConnection([
+            'DB_HOST' => $dbConfig['host'],
+            'DB_PORT' => $dbConfig['port'] ?? 3306,
+            'DB_DATABASE' => $dbConfig['database'],
+            'DB_USERNAME' => $dbConfig['username'],
+            'DB_PASSWORD' => $dbConfig['password'] ?? '',
+            'DB_CHARSET' => 'utf8mb4',
+        ]);
+
+        return [
+            'success' => true,
+            'mode' => 'dry_run',
+            'env_check' => $envResult,
+            'db_connection' => $connResult,
+            'db_config' => [
+                'host' => $dbConfig['host'],
+                'port' => $dbConfig['port'] ?? 3306,
+                'database' => $dbConfig['database'],
+                'username' => $dbConfig['username'],
+                'prefix' => $dbConfig['prefix'] ?? '',
+            ],
+            'admin_username' => $adminAccount['username'],
+            'options' => $options,
+            'sql_preview' => $sqlStatements,
+            'sql_summary' => $sqlPreview ?? 'SQL 文件未找到',
+            'will_create_db' => (bool) ($options['create_db'] ?? true),
+            'will_run_migrations' => (bool) ($options['run_migrations'] ?? true),
+            'will_seed_data' => (bool) ($options['seed_data'] ?? true),
+        ];
     }
 
     // ============================================================

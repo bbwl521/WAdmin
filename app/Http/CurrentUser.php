@@ -15,6 +15,7 @@ namespace App\Http;
 use App\Model\Enums\User\Status;
 use App\Model\Permission\User;
 use App\Service\PassportService;
+use App\Model\Plugin;
 use App\Service\Permission\MenuService;
 use App\Service\Permission\UserService;
 use Hyperf\Context\Context;
@@ -72,6 +73,20 @@ final class CurrentUser
             : $this->menuService
                 ->getList(['status' => Status::Normal, 'name' => $permissions->toArray()])
                 ->toArray();
+
+        // 过滤已禁用插件相关的菜单
+        $disabledPlugins = Plugin::query()->where('status', 2)->pluck('code')->toArray();
+        if ($disabledPlugins !== []) {
+            $menuList = array_values(array_filter($menuList, static function (array $menu) use ($disabledPlugins): bool {
+                foreach ($disabledPlugins as $code) {
+                    if ($menu['name'] === $code || str_starts_with($menu['name'], $code . ':')) {
+                        return false;
+                    }
+                }
+                return true;
+            }));
+        }
+
         $tree = [];
         $map = [];
         foreach ($menuList as &$menu) {

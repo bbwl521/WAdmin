@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 use App\Http\Common\Middleware\InstallCheckMiddleware;
 use App\Http\Common\Middleware\InstallRateLimitMiddleware;
+use App\Http\Common\Middleware\PluginGuardMiddleware;
 use Hyperf\Validation\Middleware\ValidationMiddleware;
 use Mine\Support\Middleware\CorsMiddleware;
 use Mine\Support\Middleware\RequestIdMiddleware;
@@ -30,5 +31,7 @@ return [
         CorsMiddleware::class,
         // 验证器中间件,处理 formRequest 验证器
         ValidationMiddleware::class,
+        // 插件守卫中间件（拦截已禁用插件的路由）
+        PluginGuardMiddleware::class,
     ],
 ];

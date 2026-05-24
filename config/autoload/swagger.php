@@ -23,7 +23,7 @@ return [
             Finder::create()
                 ->in([BASE_PATH . '/app/Http', BASE_PATH . '/app/Schema'])
                 ->name('*.php')
-                ->getIterator()
+                ->getIterator(),
         ],
     ],
     'processors' => [],

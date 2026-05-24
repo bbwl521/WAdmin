@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  root@imoi.cn
  * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
  */
+
 namespace Database\Seeders;
 
 use App\Model\Permission\Menu;
@@ -16,7 +17,7 @@ use App\Model\Permission\Meta;
 use Hyperf\Database\Seeders\Seeder;
 use Hyperf\DbConnection\Db;
 
-class MenuSeeder20240926 extends Seeder
+class menu_seeder_20240926 extends Seeder
 {
     public const BASE_DATA = [
         'name' => '',
@@ -368,7 +369,7 @@ class MenuSeeder20240926 extends Seeder
             }
             $_v['parent_id'] = $parent_id;
             $menu = Menu::create(array_merge(self::BASE_DATA, $_v));
-            if (isset($v['children']) && count($v['children'])) {
+            if (isset($v['children']) && \count($v['children'])) {
                 $this->create($v['children'], $menu->id);
             }
         }

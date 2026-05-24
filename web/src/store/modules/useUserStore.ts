@@ -256,6 +256,8 @@ const useUserStore = defineStore(
       setLocales,
       saveSettingToSever,
       getMenu,
+      refreshMenu,
+      setMenu,
     }
   },
 )

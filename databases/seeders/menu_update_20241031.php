@@ -9,13 +9,14 @@ declare(strict_types=1);
  * @contact  root@imoi.cn
  * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
  */
+
 namespace Database\Seeders;
 
 use App\Model\Permission\Menu;
 use Hyperf\Database\Seeders\Seeder;
 use Hyperf\DbConnection\Db;
 
-class MenuUpdate20241031 extends Seeder
+class menu_update_20241031 extends Seeder
 {
     public const BASE_DATA = [
         'name' => '',

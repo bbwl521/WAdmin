@@ -1,9 +1,16 @@
 <?php
 
 declare(strict_types=1);
-
+/**
+ * This file is part of MineAdmin.
+ *
+ * @link     https://www.mineadmin.com
+ * @document https://doc.mineadmin.com
+ * @contact  root@imoi.cn
+ * @license  https://github.com/mineadmin/MineAdmin/blob/master/LICENSE
+ */
+use Hyperf\HttpMessage\Server\Response;
 use Hyperf\HttpMessage\Stream\SwooleFileStream;
-use Hyperf\HttpMessage\Stream\SwooleStream;
 use Hyperf\HttpServer\Router\Router;
 
 Router::get('/', static function () {
@@ -11,7 +18,7 @@ Router::get('/', static function () {
 
     if (! $installed) {
         $stream = new SwooleFileStream(BASE_PATH . '/public/install.html');
-        return (new \Hyperf\HttpMessage\Server\Response())
+        return (new Response())
             ->withHeader('Content-Type', 'text/html; charset=utf-8')
             ->withBody($stream);
     }
@@ -24,14 +31,14 @@ Router::get('/install', static function () {
 
     // 已安装，重定向到首页
     if (file_exists($lockFile)) {
-        return (new \Hyperf\HttpMessage\Server\Response())
+        return (new Response())
             ->withStatus(302)
             ->withHeader('Location', '/');
     }
 
     // 未安装，显示安装向导页面
     $stream = new SwooleFileStream(BASE_PATH . '/public/install.html');
-    return (new \Hyperf\HttpMessage\Server\Response())
+    return (new Response())
         ->withHeader('Content-Type', 'text/html; charset=utf-8')
         ->withBody($stream);
 });
