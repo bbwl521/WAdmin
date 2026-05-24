@@ -56,6 +56,7 @@ export default defineConfig({
         {
           text: '插件开发',
           items: [
+            { text: '快速上手', link: '/plugin/quickstart' },
             { text: '插件指南', link: '/plugin/guide' },
             { text: '插件结构', link: '/plugin/structure' },
             { text: '插件生命周期', link: '/plugin/lifecycle' },
