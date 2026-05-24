@@ -1,8 +1,8 @@
 /**
- * MineAdmin is committed to providing solutions for quickly building web applications
+ * WAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
  * For the full copyright and license information.
- * Thank you very much for using MineAdmin.
+ * Thank you very much for using WAdmin.
  *
  * @Author X.Mo<root@imoi.cn>
  * @Link   https://github.com/mineadmin
@@ -33,9 +33,9 @@ export default defineComponent({
                 <m-tabs
                   v-model={selected.value}
                   options={[
-                    { icon: 'i-ph:chat-circle-text', label: useTrans('mineAdmin.notification.message'), value: 'message' },
-                    { icon: 'i-ic:baseline-notifications-none', label: useTrans('mineAdmin.notification.notice'), value: 'notice' },
-                    { icon: 'i-pajamas:todo-done', label: useTrans('mineAdmin.notification.todo'), value: 'todo' },
+                    { icon: 'i-ph:chat-circle-text', label: useTrans('wAdmin.notification.message'), value: 'message' },
+                    { icon: 'i-ic:baseline-notifications-none', label: useTrans('wAdmin.notification.notice'), value: 'notice' },
+                    { icon: 'i-pajamas:todo-done', label: useTrans('wAdmin.notification.todo'), value: 'todo' },
                   ]}
                 />
                 <div class="notification-box">
@@ -101,8 +101,8 @@ export default defineComponent({
                   )}
                 </div>
                 <div class="box-footer">
-                  <a class="link">{useTrans('mineAdmin.notification.allRead')}</a>
-                  <a class="link">{useTrans('mineAdmin.notification.gotoTheList')}</a>
+                  <a class="link">{useTrans('wAdmin.notification.allRead')}</a>
+                  <a class="link">{useTrans('wAdmin.notification.gotoTheList')}</a>
                 </div>
               </div>
             ),

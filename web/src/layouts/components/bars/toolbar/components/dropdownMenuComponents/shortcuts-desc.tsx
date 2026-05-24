@@ -9,10 +9,10 @@ export default defineComponent({
         <m-modal
           contentClass="w-[380px] lg:w-450px justify-start"
           v-model={dropdownMenuState.shortcuts}
-          title={useTrans('mineAdmin.userBar.shortcuts')}
+          title={useTrans('wAdmin.userBar.shortcuts')}
         >
           <div class="mine-shortcuts-block">
-            <div class="title">{useTrans('mineAdmin.shortcuts.searchBar')}</div>
+            <div class="title">{useTrans('wAdmin.shortcuts.searchBar')}</div>
             <div class="short-list">
               <div class="flex items-center text-sm">
                 <div class="short-key">
@@ -20,18 +20,18 @@ export default defineComponent({
                   +
                   <span>s</span>
                 </div>
-                <div>{useTrans('mineAdmin.shortcuts.searchOpen')}</div>
+                <div>{useTrans('wAdmin.shortcuts.searchOpen')}</div>
               </div>
               <div class="flex items-center text-sm">
                 <div class="short-key">
                   <span>Esc</span>
                 </div>
-                <div>{useTrans('mineAdmin.shortcuts.close')}</div>
+                <div>{useTrans('wAdmin.shortcuts.close')}</div>
               </div>
             </div>
           </div>
           <div class="mine-shortcuts-block mt-10">
-            <div class="title">{useTrans('mineAdmin.shortcuts.tabs')}</div>
+            <div class="title">{useTrans('wAdmin.shortcuts.tabs')}</div>
             <div class="short-list">
               <div class="flex items-center text-sm">
                 <div class="short-key">
@@ -39,7 +39,7 @@ export default defineComponent({
                   +
                   <span>1 ~ 9</span>
                 </div>
-                <div>{useTrans('mineAdmin.shortcuts.switchN')}</div>
+                <div>{useTrans('wAdmin.shortcuts.switchN')}</div>
               </div>
               <div class="flex items-center text-sm">
                 <div class="short-key">
@@ -47,7 +47,7 @@ export default defineComponent({
                   +
                   <span>0</span>
                 </div>
-                <div>{useTrans('mineAdmin.shortcuts.switchLast')}</div>
+                <div>{useTrans('wAdmin.shortcuts.switchLast')}</div>
               </div>
               <div class="flex items-center text-sm">
                 <div class="short-key">
@@ -55,7 +55,7 @@ export default defineComponent({
                   +
                   <span>↑</span>
                 </div>
-                <div>{useTrans('mineAdmin.shortcuts.toMax')}</div>
+                <div>{useTrans('wAdmin.shortcuts.toMax')}</div>
               </div>
               <div class="flex items-center text-sm">
                 <div class="short-key">
@@ -63,7 +63,7 @@ export default defineComponent({
                   +
                   <span>↓</span>
                 </div>
-                <div>{useTrans('mineAdmin.shortcuts.exitMax')}</div>
+                <div>{useTrans('wAdmin.shortcuts.exitMax')}</div>
               </div>
               <div class="flex items-center text-sm">
                 <div class="short-key">
@@ -71,7 +71,7 @@ export default defineComponent({
                   +
                   <span>c</span>
                 </div>
-                <div>{useTrans('mineAdmin.shortcuts.close')}</div>
+                <div>{useTrans('wAdmin.shortcuts.close')}</div>
               </div>
             </div>
           </div>

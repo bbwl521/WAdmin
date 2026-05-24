@@ -6,7 +6,7 @@ loginForm:
   codePlaceholder: please input captcha
   usernamePlaceholder: please input account
   passwordLabel: Password
-mineAdmin:
+wAdmin:
   goHome: Back to Home
   settings:
     copyRights:

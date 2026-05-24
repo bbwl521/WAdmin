@@ -1,8 +1,8 @@
 /**
- * MineAdmin is committed to providing solutions for quickly building web applications
+ * WAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
  * For the full copyright and license information.
- * Thank you very much for using MineAdmin.
+ * Thank you very much for using WAdmin.
  *
  * @Author X.Mo<root@imoi.cn>
  * @Link   https://github.com/mineadmin
@@ -42,7 +42,7 @@ export default defineComponent({
             <span ckass="mine-uc-n">{userInfo.nickname}</span>
           </a>
         </div>
-        <m-tooltip text={useTrans('mineAdmin.uc.backControl')}>
+        <m-tooltip text={useTrans('wAdmin.uc.backControl')}>
           <router-link className="mine-back-control" to={welcomeRoute.value}>
             <ma-svg-icon name="ri:arrow-go-back-line" size={14} />
           </router-link>
@@ -66,7 +66,7 @@ export default defineComponent({
     return () => (
       <div class="mine-uc-container">
         <div class="mine-uc-aside hidden lg:block">
-          <Logo title={useTrans('mineAdmin.uc.title')} />
+          <Logo title={useTrans('wAdmin.uc.title')} />
           <ul class="mine-uc-menu">{menuRender()}</ul>
           {userinfoRender()}
         </div>
@@ -80,7 +80,7 @@ export default defineComponent({
           <li>
             <router-link to={welcomeRoute.value}>
               <ma-svg-icon name="ri:arrow-go-back-line" size={20} />
-              <span>{useTrans('mineAdmin.uc.shortBackControl')}</span>
+              <span>{useTrans('wAdmin.uc.shortBackControl')}</span>
             </router-link>
           </li>
         </ul>

@@ -6,7 +6,7 @@ loginForm:
   codePlaceholder: 請輸入驗證碼
   usernamePlaceholder: 請輸入賬戶
   passwordLabel: 密碼
-mineAdmin:
+wAdmin:
   goHome: 回到首頁
   settings:
     copyRights:

@@ -5,7 +5,7 @@
  - Thank you very much for using WAdmin.
  -
  - @Author X.Mo<admin@wadmin.local>
- - @Link   https://gitee.com/xmo/mineadmin-vue
+ - @Link   https://github.com/bbwl521/WAdmin
 -->
 <i18n lang="yaml">
 en:

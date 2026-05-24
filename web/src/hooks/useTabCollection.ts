@@ -25,7 +25,7 @@ export default function useTabCollection() {
       tabCollection.value.push(toTab)
     }
     else {
-      Message.info(t('mineAdmin.tab.has'))
+      Message.info(t('wAdmin.tab.has'))
     }
   }
 

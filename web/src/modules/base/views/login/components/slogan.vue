@@ -21,7 +21,7 @@ const appTitle = ref<string>(import.meta.env.VITE_APP_TITLE)
       {{ appTitle }} <span class="text-sm">v{{ pkg.version }}</span>
     </p>
     <div class="slogan">
-      {{ t('mineAdmin.slogan') }}
+      {{ t('wAdmin.slogan') }}
     </div>
     <div class="mt-3 flex items-center gap-x-2">
       <ma-svg-icon name="skill-icons:php-light" class="text-4xl" />

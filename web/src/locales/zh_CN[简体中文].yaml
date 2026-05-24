@@ -6,7 +6,7 @@ loginForm:
   codePlaceholder: 请输入验证码
   usernamePlaceholder: 请输入账户
   passwordLabel: 密码
-mineAdmin:
+wAdmin:
   goHome: 回到首页
   settings:
     copyRights:

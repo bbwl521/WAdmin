@@ -1,8 +1,8 @@
 /**
- * MineAdmin is committed to providing solutions for quickly building web applications
+ * WAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
  * For the full copyright and license information.
- * Thank you very much for using MineAdmin.
+ * Thank you very much for using WAdmin.
  *
  * @Author X.Mo<root@imoi.cn>
  * @Link   https://github.com/mineadmin
@@ -23,32 +23,32 @@ export default defineComponent({
 
     const links: any[] = [
       {
-        label: 'mineAdmin.userBar.uc',
+        label: 'wAdmin.userBar.uc',
         icon: 'material-symbols:account-circle-outline',
         handle: () => router.push({ path: '/uc' }),
       },
       {
-        label: 'mineAdmin.userBar.clearCache',
+        label: 'wAdmin.userBar.clearCache',
         icon: 'mingcute:broom-line',
         handle: async () => {
           await userStore.clearCache()
-          Message.success(t('mineAdmin.common.clearCache'))
+          Message.success(t('wAdmin.common.clearCache'))
         },
       },
       { label: 'divider' },
       {
-        label: 'mineAdmin.userBar.shortcuts',
+        label: 'wAdmin.userBar.shortcuts',
         icon: 'i-material-symbols:keyboard-keys',
         handle: () => userStore.setDropdownMenuState('shortcuts', true),
       },
       {
-        label: 'mineAdmin.userBar.systemInfo',
+        label: 'wAdmin.userBar.systemInfo',
         icon: 'i-bi:info-circle',
         handle: () => userStore.setDropdownMenuState('systemInfo', true),
       },
       { label: 'divider' },
       {
-        label: 'mineAdmin.userBar.logout',
+        label: 'wAdmin.userBar.logout',
         icon: 'hugeicons:logout-04',
         handle: () => userStore.logout(),
       },

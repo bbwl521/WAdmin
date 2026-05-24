@@ -1,8 +1,8 @@
 /**
- * MineAdmin is committed to providing solutions for quickly building web applications
+ * WAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
  * For the full copyright and license information.
- * Thank you very much for using MineAdmin.
+ * Thank you very much for using WAdmin.
  *
  * @Author X.Mo<root@imoi.cn>
  * @Link   https://github.com/mineadmin
@@ -35,8 +35,8 @@ export default defineComponent({
               popper: () => (
                 <div class="collection-wrapper">
                   <div class="title-bar">
-                    <div>{useTrans('mineAdmin.tab.favorites')}</div>
-                    <a class="cursor-pointer" title={useTrans('mineAdmin.tab.addFavorite')} onClick={() => addToCollection()}>
+                    <div>{useTrans('wAdmin.tab.favorites')}</div>
+                    <a class="cursor-pointer" title={useTrans('wAdmin.tab.addFavorite')} onClick={() => addToCollection()}>
                       <ma-svg-icon name="fluent:collections-16-regular" size={20} />
                     </a>
                   </div>
@@ -56,7 +56,7 @@ export default defineComponent({
                     ))}
                     {tabCollection.value.length === 0 && (
                       <div class="h-13 w-full flex items-center justify-center">
-                        {useTrans('mineAdmin.tab.noFavorite')}
+                        {useTrans('wAdmin.tab.noFavorite')}
                       </div>
                     )}
                   </div>

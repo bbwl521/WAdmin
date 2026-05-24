@@ -1,8 +1,8 @@
 /**
- * MineAdmin is committed to providing solutions for quickly building web applications
+ * WAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
  * For the full copyright and license information.
- * Thank you very much for using MineAdmin.
+ * Thank you very much for using WAdmin.
  *
  * @Author X.Mo<root@imoi.cn>
  * @Link   https://github.com/mineadmin
@@ -64,9 +64,9 @@ export default defineComponent({
       return tabsRender(
         'colorMode',
         [
-          { icon: 'material-symbols:sunny-outline-rounded', label: useTrans('mineAdmin.settings.colorModes.light') as string, value: 'light' },
-          { icon: 'material-symbols:dark-mode-outline', label: useTrans('mineAdmin.settings.colorModes.dark') as string, value: 'dark' },
-          { icon: 'lets-icons:color-mode-light', label: useTrans('mineAdmin.settings.colorModes.system') as string, value: 'autoMode' },
+          { icon: 'material-symbols:sunny-outline-rounded', label: useTrans('wAdmin.settings.colorModes.light') as string, value: 'light' },
+          { icon: 'material-symbols:dark-mode-outline', label: useTrans('wAdmin.settings.colorModes.dark') as string, value: 'dark' },
+          { icon: 'lets-icons:color-mode-light', label: useTrans('wAdmin.settings.colorModes.system') as string, value: 'autoMode' },
         ],
         async (v: any) => await settingStore.toggleColorMode(v),
       )
@@ -111,7 +111,7 @@ export default defineComponent({
     const layoutsRender = () => {
       return (
         <div class="mine-layout-setting">
-          <m-tooltip text={useTrans('mineAdmin.settings.layouts.classic')}>
+          <m-tooltip text={useTrans('wAdmin.settings.layouts.classic')}>
             <div
               class={{ 'classic': true, 'mine-selected-layout': settingStore.isClassicLayout() }}
               onClick={() => settingStore.getSettings('app').layout = 'classic'}
@@ -120,7 +120,7 @@ export default defineComponent({
               <div class="h-full w-[75%] rounded-r bg-[rgb(var(--ui-primary)/40%)]"></div>
             </div>
           </m-tooltip>
-          <m-tooltip text={useTrans('mineAdmin.settings.layouts.columns')}>
+          <m-tooltip text={useTrans('wAdmin.settings.layouts.columns')}>
             <div
               class={{ 'columns': true, 'mine-selected-layout': settingStore.isColumnsLayout() }}
               onClick={() => settingStore.getSettings('app').layout = 'columns'}
@@ -130,7 +130,7 @@ export default defineComponent({
               <div class="h-full w-[70%] rounded-r bg-[rgb(var(--ui-primary)/15%)]"></div>
             </div>
           </m-tooltip>
-          <m-tooltip text={useTrans('mineAdmin.settings.layouts.mixed')}>
+          <m-tooltip text={useTrans('wAdmin.settings.layouts.mixed')}>
             <div
               class={{ 'mixed': true, 'mine-selected-layout': settingStore.isMixedLayout() }}
               onClick={() => settingStore.getSettings('app').layout = 'mixed'}
@@ -169,15 +169,15 @@ export default defineComponent({
         <>
           {
             settingsRender('tabbar', [
-              { label: useTrans('mineAdmin.settings.tabbars.enable') as string, value: 'enable' },
+              { label: useTrans('wAdmin.settings.tabbars.enable') as string, value: 'enable' },
             ])
           }
           <div class="mine-setting-description">
-            <div class="desc-label">{useTrans('mineAdmin.settings.tabbars.mode')}</div>
+            <div class="desc-label">{useTrans('wAdmin.settings.tabbars.mode')}</div>
             <div class="desc-value">
               {tabsRender('tabMode', [
-                { label: useTrans('mineAdmin.settings.tabbars.modeDefault') as string, value: 'rectangle' },
-                { label: useTrans('mineAdmin.settings.tabbars.modeCard') as string, value: 'card' },
+                { label: useTrans('wAdmin.settings.tabbars.modeDefault') as string, value: 'rectangle' },
+                { label: useTrans('wAdmin.settings.tabbars.modeCard') as string, value: 'card' },
               ], (v: string) => settingStore.getSettings('tabbar').mode = v, 'h-6 text-[12px]')}
             </div>
           </div>
@@ -205,7 +205,7 @@ export default defineComponent({
             )
           })}
           <div class="mt-3 flex items-center justify-between rounded p-2 ring-2 ring-[rgb(var(--ui-primary))]">
-            <div class="text-sm">{useTrans('mineAdmin.toolbars.sorts')}</div>
+            <div class="text-sm">{useTrans('wAdmin.toolbars.sorts')}</div>
             <div class="flex items-center gap-x-3" ref={el}>
               {toolbarHook.getShowToolbar().map((item: MineToolbar) => (
                 <ma-svg-icon name={item.icon} size={20} class="cursor-e-resize" />
@@ -219,16 +219,16 @@ export default defineComponent({
     const copyrightRender = () => {
       const setting = settingStore.getSettings('copyright')
       const options = [
-        { label: useTrans('mineAdmin.settings.copyRights.date') as string, value: 'dates' },
-        { label: useTrans('mineAdmin.settings.copyRights.company') as string, value: 'company' },
-        { label: useTrans('mineAdmin.settings.copyRights.website') as string, value: 'website' },
-        { label: useTrans('mineAdmin.settings.copyRights.putOnRecord') as string, value: 'putOnRecord' },
+        { label: useTrans('wAdmin.settings.copyRights.date') as string, value: 'dates' },
+        { label: useTrans('wAdmin.settings.copyRights.company') as string, value: 'company' },
+        { label: useTrans('wAdmin.settings.copyRights.website') as string, value: 'website' },
+        { label: useTrans('wAdmin.settings.copyRights.putOnRecord') as string, value: 'putOnRecord' },
       ]
       return (
         <>
           {
             settingsRender('copyright', [
-              { label: useTrans('mineAdmin.settings.copyRights.enable') as string, value: 'enable' },
+              { label: useTrans('wAdmin.settings.copyRights.enable') as string, value: 'enable' },
             ])
           }
           { options.map((item: any) => (
@@ -254,7 +254,7 @@ export default defineComponent({
         <m-drawer
           v-model={display.value}
           contentClass="w-380px"
-          title={useTrans('mineAdmin.settings.title')}
+          title={useTrans('wAdmin.settings.title')}
           v-slots={{
             trigger: () => (
               <ma-svg-icon
@@ -270,51 +270,51 @@ export default defineComponent({
             ),
             default: () => (
               <div class="pb-10">
-                {divider(useTrans('mineAdmin.settings.colorMode') as string)}
+                {divider(useTrans('wAdmin.settings.colorMode') as string)}
                 <div class="mx-auto mt-3 w-[70%]">
                   {colorModeSettings()}
                 </div>
                 {keys.value.colorMode !== 'dark' && settingsRender('app', [
-                  { label: useTrans('mineAdmin.settings.asideDark') as string,
+                  { label: useTrans('wAdmin.settings.asideDark') as string,
                     value: 'asideDark',
                     change: (v: boolean) => settingStore.setAsideDark(v),
                   },
                 ])}
 
-                {divider(useTrans('mineAdmin.settings.primaryColorSetting') as string)}
+                {divider(useTrans('wAdmin.settings.primaryColorSetting') as string)}
                 <ul class="mine-setting-color-list">
                   {colorListRender()}
                 </ul>
 
-                {divider(useTrans('mineAdmin.settings.layoutSetting') as string)}
+                {divider(useTrans('wAdmin.settings.layoutSetting') as string)}
                 {layoutsRender()}
 
-                {divider(useTrans('mineAdmin.settings.mainAsideSetting') as string)}
+                {divider(useTrans('wAdmin.settings.mainAsideSetting') as string)}
                 {
                   settingsRender('mainAside', [
-                    { label: useTrans('mineAdmin.settings.mainAsides.mainMenuTitle') as string, value: 'showTitle' },
-                    { label: useTrans('mineAdmin.settings.mainAsides.autoToFirstMenu') as string, value: 'enableOpenFirstRoute' },
+                    { label: useTrans('wAdmin.settings.mainAsides.mainMenuTitle') as string, value: 'showTitle' },
+                    { label: useTrans('wAdmin.settings.mainAsides.autoToFirstMenu') as string, value: 'enableOpenFirstRoute' },
                   ])
                 }
 
-                {divider(useTrans('mineAdmin.settings.tabBarSettings') as string)}
+                {divider(useTrans('wAdmin.settings.tabBarSettings') as string)}
                 {tabSettingRender()}
 
-                {divider(useTrans('mineAdmin.settings.toolBarSettings') as string)}
+                {divider(useTrans('wAdmin.settings.toolBarSettings') as string)}
                 {toolbarHook.state && toolbarRender()}
 
-                {divider(useTrans('mineAdmin.settings.copyRightSettings') as string)}
+                {divider(useTrans('wAdmin.settings.copyRightSettings') as string)}
                 {copyrightRender()}
 
-                {divider(useTrans('mineAdmin.settings.otherSettings') as string)}
+                {divider(useTrans('wAdmin.settings.otherSettings') as string)}
                 {
                   settingsRender('app', [
-                    { label: useTrans('mineAdmin.settings.enableBreadcrumb') as string, value: 'showBreadcrumb' },
-                    { label: useTrans('mineAdmin.settings.enableWatermark') as string, value: 'enableWatermark' },
+                    { label: useTrans('wAdmin.settings.enableBreadcrumb') as string, value: 'showBreadcrumb' },
+                    { label: useTrans('wAdmin.settings.enableWatermark') as string, value: 'enableWatermark' },
                   ])
                 }
                 <div class="mine-setting-description">
-                  <div class="desc-label !w-6/12">{useTrans('mineAdmin.settings.watermarkText')}</div>
+                  <div class="desc-label !w-6/12">{useTrans('wAdmin.settings.watermarkText')}</div>
                   <div class="desc-value !w-6/12">
                     <m-input
                       class="mb-1 !h-6 !py-1"
@@ -334,10 +334,10 @@ export default defineComponent({
                 class="block w-full !py-2"
                 onClick={() => {
                   useUserStore().saveSettingToSever()
-                  Message.success(t('mineAdmin.common.saveSuccess'), { zIndex: 9999 })
+                  Message.success(t('wAdmin.common.saveSuccess'), { zIndex: 9999 })
                 }}
               >
-                {useTrans('mineAdmin.settings.save')}
+                {useTrans('wAdmin.settings.save')}
               </m-button>
             ),
           }}

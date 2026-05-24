@@ -1,8 +1,8 @@
 /**
- * MineAdmin is committed to providing solutions for quickly building web applications
+ * WAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
  * For the full copyright and license information.
- * Thank you very much for using MineAdmin.
+ * Thank you very much for using WAdmin.
  *
  * @Author X.Mo<root@imoi.cn>
  * @Link   https://github.com/mineadmin
@@ -41,41 +41,41 @@ export default defineComponent({
         customClass: 'mine-contextmenu',
         items: [
           {
-            label: t('mineAdmin.tab.refresh') as string,
+            label: t('wAdmin.tab.refresh') as string,
             icon: 'i-ri:refresh-line',
             onClick: async () => await tabStore.refreshTab(item),
           },
           {
-            label: t('mineAdmin.tab.close') as string,
+            label: t('wAdmin.tab.close') as string,
             icon: 'i-ri:close-line',
             disabled: tabStore.tabList.length <= 1 || item.affix,
             divided: true,
             onClick: () => tabStore.closeTab(item),
           },
           {
-            label: t('mineAdmin.tab.fixed') as string,
+            label: t('wAdmin.tab.fixed') as string,
             icon: 'i-ri:pushpin-2-line',
             disabled: item.affix,
             onClick: () => tabStore.affixTab(item),
           },
           {
-            label: t('mineAdmin.tab.fullscreen') as string,
+            label: t('wAdmin.tab.fullscreen') as string,
             icon: 'i-material-symbols:fullscreen',
             divided: true,
             onClick: () => tabStore.maxSizeTab(item),
           },
           {
-            label: t('mineAdmin.tab.closeOther') as string,
+            label: t('wAdmin.tab.closeOther') as string,
             icon: 'i-ic:outline-cancel',
             onClick: () => tabStore.closeOtherTab(item),
           },
           {
-            label: t('mineAdmin.tab.closeLeft') as string,
+            label: t('wAdmin.tab.closeLeft') as string,
             icon: 'i-material-symbols:skip-previous-outline-rounded',
             onClick: () => tabStore.closeLeftTab(item),
           },
           {
-            label: t('mineAdmin.tab.closeRight') as string,
+            label: t('wAdmin.tab.closeRight') as string,
             icon: 'i-material-symbols:skip-next-outline-rounded',
             onClick: () => tabStore.closeRightTab(item),
           },
@@ -211,7 +211,7 @@ export default defineComponent({
                     onClick={(e: Event) => {
                       e.stopPropagation()
                       if (item.name === tabStore.defaultTab.name) {
-                        Message.error(t('mineAdmin.tab.cannotUnfixed'))
+                        Message.error(t('wAdmin.tab.cannotUnfixed'))
                         return
                       }
                       tabStore.cancelAffixTab(item)

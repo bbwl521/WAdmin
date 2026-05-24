@@ -281,7 +281,7 @@ function handleDelete() {
 </template>
 
 <style scoped lang="scss">
-:deep(.mineadmin-pro-table-search) {
+:deep(.wadmin-pro-table-search) {
   margin: 0; padding: 0;
   @apply pt-3;
 }

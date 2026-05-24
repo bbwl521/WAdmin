@@ -23,7 +23,7 @@ const appTitle = ref<string>(import.meta.env.VITE_APP_TITLE)
       {{ appTitle }}
     </h3>
     <div class="pure-tag">
-      {{ t('mineAdmin.mark') }}
+      {{ t('wAdmin.mark') }}
     </div>
   </div>
 </template>
