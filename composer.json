@@ -90,8 +90,8 @@
       "Database\\": "databases/"
     },
     "classmap": [
-      "databases/Seeders/",
-      "databases/Migrations/"
+      "databases/seeders/",
+      "databases/migrations/"
     ]
   },
   "autoload-dev": {

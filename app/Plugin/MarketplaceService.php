@@ -32,7 +32,7 @@ final class MarketplaceService
         ConfigInterface $config,
     ) {
         $this->baseUrl = (string) $config->get('plugin.marketplace_url', 'https://marketplace.mineadmin.com');
-        $this->timeout = (int) $config->get('plugin.marketplace_timeout', 30);
+        $this->timeout = (int) $config->get('plugin.marketplace_timeout', 5);
     }
 
     /** 获取市场插件列表 */
