@@ -21,5 +21,7 @@ public
 !public/install.html
 !web/public
 *.lock
+doc/
+docs/
 storage/swagger/http.json
 storage/uploadsinstall.lock
