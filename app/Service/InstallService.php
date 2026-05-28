@@ -15,7 +15,11 @@ namespace App\Service;
 use App\Event\InstallationCompletedEvent;
 use App\Exception\BusinessException;
 use App\Http\Common\ResultCode;
+use Hyperf\Context\ApplicationContext;
+use Hyperf\Contract\ConfigInterface;
+use Hyperf\Database\Migrations\Migrator;
 use Hyperf\DbConnection\Db;
+use Hyperf\DbConnection\Pool\PoolFactory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 class InstallService
@@ -292,13 +296,19 @@ class InstallService
                 $committed['database_created'] = true;
             }
 
-            // Step 4: 执行 SQL 导入（建表 + 初始数据，可分别控制）
-            if ($shouldRunMigrations || $shouldSeedData) {
-                $this->execSqlFile($config, $adminUsername, $adminPassword);
+            // Step 4: 执行数据库迁移（建表）
+            if ($shouldRunMigrations) {
+                $this->runMigrations($config);
                 $committed['sql_imported'] = true;
             }
 
-            // Step 5: 安装完成
+            // Step 5: 填充初始数据
+            if ($shouldSeedData) {
+                $this->runSeeders($config, $adminUsername, $adminPassword);
+                $committed['sql_imported'] = true;
+            }
+
+            // Step 6: 安装完成
             $this->progressTracker->setProgress(
                 InstallProgressTracker::STEP_COMPLETE,
                 InstallProgressTracker::STATUS_SUCCESS
@@ -352,6 +362,179 @@ class InstallService
     }
 
     // ============================================================
+    //  Migration & Seeder 执行（动态 Config 注入 + 连接池刷新）
+    // ============================================================
+
+    /**
+     * Run all database migrations via Hyperf Migrator.
+     *
+     * Dynamically injects database config into Hyperf's Config container
+     * and flushes the connection pool so new connections pick up the config
+     * without requiring a Swoole server restart.
+     */
+    private function runMigrations(array $config): void
+    {
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_MIGRATION,
+            'info',
+            '开始执行数据库迁移'
+        );
+
+        $this->progressTracker->setProgress(
+            InstallProgressTracker::STEP_MIGRATION,
+            InstallProgressTracker::STATUS_RUNNING
+        );
+
+        try {
+            // 1. Inject database config into Hyperf Config container
+            $container = ApplicationContext::getContainer();
+            $hyperfConfig = $container->get(ConfigInterface::class);
+            $hyperfConfig->set('databases.default', [
+                'driver' => 'mysql',
+                'host' => $config['DB_HOST'],
+                'port' => (int) ($config['DB_PORT'] ?? 3306),
+                'database' => $config['DB_DATABASE'],
+                'username' => $config['DB_USERNAME'],
+                'password' => $config['DB_PASSWORD'],
+                'charset' => $config['DB_CHARSET'] ?? 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
+                'prefix' => $config['DB_PREFIX'] ?? '',
+                'pool' => [
+                    'min_connections' => 1,
+                    'max_connections' => 20,
+                    'connect_timeout' => 10.0,
+                    'wait_timeout' => 3.0,
+                    'heartbeat' => -1,
+                    'max_idle_time' => 60.0,
+                ],
+            ]);
+
+            // 2. Flush and clear connection pool cache so next getPool()
+            //    creates a fresh DbPool with the new config
+            $poolFactory = $container->get(PoolFactory::class);
+            $poolFactory->flushAll();
+            $refPools = new \ReflectionProperty($poolFactory, 'pools');
+            $refPools->setAccessible(true);
+            $refPools->setValue($poolFactory, []);
+
+            // 3. Run migrations via Migrator
+            $migrator = $container->get(Migrator::class);
+
+            if (! $migrator->repositoryExists()) {
+                $migrator->getRepository()->createRepository();
+            }
+
+            $migrator->run([BASE_PATH . '/databases/Migrations']);
+
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_MIGRATION,
+                InstallProgressTracker::STATUS_SUCCESS
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_MIGRATION,
+                'success',
+                '数据库迁移完成'
+            );
+        } catch (\Throwable $e) {
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_MIGRATION,
+                InstallProgressTracker::STATUS_FAILED,
+                ['error' => $e->getMessage()]
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_MIGRATION,
+                'error',
+                '数据库迁移失败: ' . $e->getMessage()
+            );
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Run database seeders to populate initial data.
+     *
+     * Injects database config into Hyperf Config container (same as runMigrations)
+     * so that Db::table() / Model::create() in seeders work without a server restart.
+     */
+    private function runSeeders(array $config, ?string $adminUsername, ?string $adminPassword): void
+    {
+        $this->progressTracker->log(
+            InstallProgressTracker::STEP_SEED,
+            'info',
+            '开始填充初始数据'
+        );
+
+        $this->progressTracker->setProgress(
+            InstallProgressTracker::STEP_SEED,
+            InstallProgressTracker::STATUS_RUNNING
+        );
+
+        try {
+            // 注入数据库配置到 Hyperf Config 容器，独立保证 seed 可用
+            $container = ApplicationContext::getContainer();
+            $hyperfConfig = $container->get(ConfigInterface::class);
+            $hyperfConfig->set('databases.default', [
+                'driver' => 'mysql',
+                'host' => $config['DB_HOST'],
+                'port' => (int) ($config['DB_PORT'] ?? 3306),
+                'database' => $config['DB_DATABASE'],
+                'username' => $config['DB_USERNAME'],
+                'password' => $config['DB_PASSWORD'],
+                'charset' => $config['DB_CHARSET'] ?? 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
+                'prefix' => $config['DB_PREFIX'] ?? '',
+                'pool' => [
+                    'min_connections' => 1,
+                    'max_connections' => 20,
+                    'connect_timeout' => 10.0,
+                    'wait_timeout' => 3.0,
+                    'heartbeat' => -1,
+                    'max_idle_time' => 60.0,
+                ],
+            ]);
+
+            // 刷新连接池
+            $poolFactory = $container->get(PoolFactory::class);
+            $poolFactory->flushAll();
+            $refPools = new \ReflectionProperty($poolFactory, 'pools');
+            $refPools->setAccessible(true);
+            $refPools->setValue($poolFactory, []);
+
+            // 执行数据填充
+            $seeder = new \Database\DatabaseSeeder();
+            $seeder->run($adminUsername, $adminPassword);
+
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_SEED,
+                InstallProgressTracker::STATUS_SUCCESS
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_SEED,
+                'success',
+                '初始数据填充完成'
+            );
+        } catch (\Throwable $e) {
+            $this->progressTracker->setProgress(
+                InstallProgressTracker::STEP_SEED,
+                InstallProgressTracker::STATUS_FAILED,
+                ['error' => $e->getMessage()]
+            );
+
+            $this->progressTracker->log(
+                InstallProgressTracker::STEP_SEED,
+                'error',
+                '数据填充失败: ' . $e->getMessage()
+            );
+
+            throw $e;
+        }
+    }
+
+    // ============================================================
     //  干跑预览模式
     // ============================================================
 
@@ -366,36 +549,11 @@ class InstallService
     {
         $envResult = $this->checkEnvironment();
 
-        // 读取 SQL 文件并预览
-        $sqlFile = BASE_PATH . '/databases/mineadmin.sql';
-        $sqlPreview = null;
-        $sqlStatements = [];
+        // 预览迁移和 Seed 信息
+        $migrationFiles = glob(BASE_PATH . '/databases/Migrations/*.php') ?: [];
+        $migrationCount = \count($migrationFiles);
 
-        if (file_exists($sqlFile)) {
-            $sql = file_get_contents($sqlFile);
-            if ($sql !== false) {
-                $prefix = $dbConfig['prefix'] ?? '';
-                if ($prefix) {
-                    $sql = $this->dbInstaller->replaceTablePrefix($sql, $prefix);
-                }
-                // 提取前 10 条非空语句用于预览
-                $rawStatements = explode(';', $sql);
-                $count = 0;
-                foreach ($rawStatements as $stmt) {
-                    $trimmed = trim($stmt);
-                    if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '/*')) {
-                        continue;
-                    }
-                    $sqlStatements[] = mb_strlen($trimmed) > 120
-                        ? mb_substr($trimmed, 0, 120) . '...'
-                        : $trimmed;
-                    if (++$count >= 10) {
-                        break;
-                    }
-                }
-                $sqlPreview = \count($sqlStatements) . ' 条语句（已截断预览）';
-            }
-        }
+        $sqlPreview = "{$migrationCount} 个迁移文件，通过 Hyperf Migrator 执行";
 
         // 测试数据库连接
         $connResult = $this->testDatabaseConnection([
@@ -421,8 +579,8 @@ class InstallService
             ],
             'admin_username' => $adminAccount['username'],
             'options' => $options,
-            'sql_preview' => $sqlStatements,
-            'sql_summary' => $sqlPreview ?? 'SQL 文件未找到',
+            'migration_count' => $migrationCount ?? 0,
+            'sql_summary' => $sqlPreview ?? '无迁移文件',
             'will_create_db' => (bool) ($options['create_db'] ?? true),
             'will_run_migrations' => (bool) ($options['run_migrations'] ?? true),
             'will_seed_data' => (bool) ($options['seed_data'] ?? true),
@@ -457,8 +615,9 @@ class InstallService
             1 => ['title' => '环境检测', 'key' => 'env_check', 'description' => '检查系统环境和依赖'],
             2 => ['title' => '数据库配置', 'key' => 'db_config', 'description' => '配置数据库连接信息'],
             3 => ['title' => '创建数据库', 'key' => 'db_create', 'description' => '创建数据库和表结构'],
-            4 => ['title' => '填充数据', 'key' => 'seed', 'description' => '导入初始数据'],
-            5 => ['title' => '安装完成', 'key' => 'complete', 'description' => '系统已准备就绪'],
+            4 => ['title' => '执行迁移', 'key' => 'migration', 'description' => '创建数据表结构'],
+            5 => ['title' => '填充数据', 'key' => 'seed', 'description' => '导入初始数据'],
+            6 => ['title' => '安装完成', 'key' => 'complete', 'description' => '系统已准备就绪'],
         ];
     }
 

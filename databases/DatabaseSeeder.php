@@ -13,12 +13,14 @@ declare(strict_types=1);
 namespace Database;
 
 use Database\Seeders\MenuSeeder20240926;
+use Database\Seeders\PluginMenuSeeder;
 use Database\Seeders\UserDept20250310;
 use Hyperf\Database\Seeders\Seeder;
 use Hyperf\DbConnection\Db;
 
 class DatabaseSeeder extends Seeder
 {
+
     /**
      * Seed the application's database.
      */
@@ -27,13 +29,14 @@ class DatabaseSeeder extends Seeder
         $userId = $this->seedAdminUser($adminUsername, $adminPassword);
         $this->seedMenus();
         $this->seedRoles();
-        $this->seedRolePermissions($userId ?? 1);
+        $this->seedRolePermissions($adminUsername, $userId ?? 1);
 
         return [
             'username' => $adminUsername ?: 'admin',
             'user_id' => $userId,
         ];
     }
+    
 
     /**
      * Seed admin user.
@@ -76,6 +79,7 @@ class DatabaseSeeder extends Seeder
         // 直接实例化并调用 seeder（Hyperf 的 Seeder 没有 call 方法）
         (new MenuSeeder20240926())->run();
         (new UserDept20250310())->run();
+        (new PluginMenuSeeder())->run();
     }
 
     /**
@@ -103,7 +107,7 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed role permissions (user-role and role-menu).
      */
-    private function seedRolePermissions(int $userId = 1): void
+    private function seedRolePermissions(?string $adminUsername, int $userId = 1): void
     {
         $userBelongsRoleTable = 'user_belongs_role';
         $roleBelongsMenuTable = 'role_belongs_menu';
@@ -132,11 +136,11 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 添加 Casbin 规则
+        // 添加 Casbin 规则（v0 使用自定义账号名）
         $rulesTable = config('permission.database.table', 'rules');
         Db::table($rulesTable)->truncate();
         Db::table($rulesTable)->insert([
-            'v0' => 'admin',
+            'v0' => $adminUsername ?: 'admin',
             'v1' => 'SuperAdmin',
             'ptype' => 'g',
         ]);
