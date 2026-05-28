@@ -18,6 +18,7 @@ tests/coverage
 tests/coding_standard.xml
 tests/junit.xml
 public
+!public/install.html
 !web/public
 *.lock
 storage/swagger/http.json

@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MineAdmin 安装向导</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #f1f6fd;
+            min-height: 100vh;
+            font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, 'Microsoft Yahei', Arial, sans-serif;
+            font-size: 14px;
+            color: #7E96B3;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        a { color: #4e73df; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Logo */
+        .logo { margin-bottom: 10px; }
+
+        h2 {
+            font-size: 26px;
+            font-weight: normal;
+            color: #3C5675;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #a0aec0;
+            margin-bottom: 30px;
+        }
+
+        /* Step Indicator */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #cbd5e0;
+            transition: all 0.3s;
+        }
+
+        .step-dot.active {
+            background: #4e73df;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        .step-dot.done { background: #3C5675; }
+
+        /* Form */
+        form, .form-area { margin-top: 20px; text-align: left; }
+
+        .form-group { margin-bottom: 0; }
+
+        .form-field {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 14px;
+        }
+
+        .form-field input,
+        .form-field select {
+            background: #fff;
+            border: none;
+            border-bottom: 2px solid #e2e8f0;
+            transition: all 0.2s;
+            width: 100%;
+            padding: 12px 4px;
+            font-size: 14px;
+            color: #3C5675;
+            outline: none;
+            border-radius: 0;
+            letter-spacing: 0.3px;
+        }
+
+        .form-field input:focus {
+            border-color: #4e73df;
+            color: #333;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+            padding-left: 2px;
+        }
+
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-field { flex: 1; min-width: 0; }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 24px 0 12px;
+            padding-left: 4px;
+        }
+
+        /* Buttons */
+        button, .btn {
+            background: #3C5675;
+            color: #fff;
+            border: 0;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 15px 36px;
+            font-size: 14px;
+            border-radius: 4px;
+            -webkit-appearance: none;
+            transition: all 0.2s;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+        }
+
+        button:hover:not(:disabled), .btn:hover {
+            background: #2d4259;
+        }
+
+        button[disabled], .btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary { background: #4e73df; }
+        .btn-primary:hover:not(:disabled) { background: #3b5de7; }
+
+        .btn-secondary { background: #e2e8f0; color: #7E96B3; margin-top: 10px; }
+        .btn-secondary:hover { background: #cbd5e0; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-group .btn { flex: 1; }
+
+        /* Alerts */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .alert-error { background: #D83E3E; color: #fff; }
+        .alert-error a { color: #fff; text-decoration: underline; }
+        .alert-success { background: #3C5675; color: #fff; }
+        .alert-info { background: #e8f0fe; color: #4e73df; }
+        .alert-warning { background: #fff4e5; color: #b45309; }
+
+        /* Requirements List - Two Column Layout */
+        .req-section {
+            margin: 12px 0;
+            text-align: left;
+        }
+
+        .req-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a0aec0;
+            margin-bottom: 8px;
+            padding-left: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .req-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .req-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 12px;
+            background: #fff;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .req-item .r-name {
+            color: #3C5675;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 8px;
+        }
+
+        .req-item .r-val {
+            font-size: 11px;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        .req-item .status-pass { color: #22c55e; font-weight: 700; flex-shrink: 0; font-size: 14px; }
+        .req-item .status-fail { color: #D83E3E; font-weight: 700; flex-shrink: 0; font-size: 14px; }
+        .req-item .status-warn { color: #f59e0b; font-weight: 700; flex-shrink: 0; font-size: 14px; }
+
+        /* Progress */
+        .progress-wrap { margin: 24px 0; text-align: left; }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #3C5675;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4e73df, #3b5de7);
+            border-radius: 2px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        /* Logs */
+        .logs {
+            background: #1e293b;
+            border-radius: 4px;
+            padding: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 16px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11.5px;
+            line-height: 1.8;
+            text-align: left;
+        }
+
+        .log-line { display: flex; gap: 10px; color: #94a3b8; }
+        .log-time { color: #64748b; flex-shrink: 0; }
+        .log-lvl { width: 48px; flex-shrink: 0; font-weight: 600; }
+        .log-lvl.info { color: #60a5fa; }
+        .log-lvl.success { color: #34d399; }
+        .log-lvl.error { color: #f87171; }
+        .log-msg { word-break: break-all; }
+
+        /* Success / Error / Installed pages */
+        .page-result { text-align: center; padding: 30px 0; }
+
+        .result-icon {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .result-icon.success-icon { background: #22c55e; }
+        .result-icon.installed-icon { background: #3C5675; }
+
+        .page-result h3 { font-size: 24px; color: #3C5675; font-weight: normal; margin-bottom: 8px; }
+        .page-result p { color: #a0aec0; margin-bottom: 24px; }
+
+        .cred-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .cred-card h4 {
+            font-size: 13px; color: #a0aec0;
+            font-weight: 600; margin-bottom: 14px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .cred-row {
+            display: flex; justify-content: space-between;
+            align-items: center; padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .cred-row:last-child { border-bottom: none; }
+        .cred-row .label { color: #a0aec0; font-size: 13px; }
+        .cred-row .val { color: #3C5675; font-weight: 600; font-family: monospace; background: #f8fafc; padding: 3px 10px; border-radius: 3px; }
+
+        .hidden { display: none !important; }
+
+        /* Checkbox */
+        .chk-group {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 14px; background: #fff4e5;
+            border-radius: 4px; margin-top: 12px; font-size: 13px; color: #92400e;
+        }
+        .chk-group input[type=checkbox] { accent-color: #f59e0b; width: 16px; height: 16px; }
+
+        .note-text {
+            font-size: 12px; color: #a0aec0; margin-top: 12px;
+            padding: 10px 14px; background: #f8fafc; border-radius: 4px;
+            border-left: 3px solid #4e73df;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 20px; height: 20px;
+            border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+            border-radius: 50%; animation: spin .6s linear infinite;
+            display: inline-block; vertical-align: middle; margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 480px) {
+            .container { padding: 20px 16px; }
+            .form-row { flex-direction: column; gap: 0; }
+            .req-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Logo -->
+    <div class="logo">
+        <svg width="72" height="86" viewBox="0 0 768 830" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                <path d="M64.433651,605.899968 C20.067302,536.265612 0,469.698785 0,389.731348 C0,174.488668 171.922656,0 384,0 C596.077344,0 768,174.488668 768,389.731348 C768,469.698785 747.932698,536.265612 703.566349,605.899968 C614.4,753.480595 441.6,870.4 384,870.4 C326.4,870.4 153.6,753.480595 64.433651,605.899968 Z"
+                      fill="#4e73df"></path>
+                <path d="M429.649,191 L430.161,191 L429.649,191 L429.649,191 Z M429.649,156 L427.089,156 C419.409,157.024 411.729,160.608 404.561,168.8 L403.025,170.848 L206.929,429.92 C198.737,441.184 197.713,453.984 204.369,466.784 C210.513,478.048 222.289,485.728 235.601,485.728 L336.465,486.24 L304.209,673.632 C301.649,689.504 310.353,705.376 325.201,712.032 C329.809,714.08 334.417,714.592 339.537,714.592 C349.777,714.592 358.993,709.472 366.161,700.256 L561.745,419.168 C569.937,407.904 570.961,395.104 564.305,382.304 C557.649,369.504 547.409,363.36 533.073,363.36 L432.209,363.36 L463.953,199.008 C464.465,196.448 464.977,193.376 464.977,190.816 C464.977,171.872 449.105,156 431.185,156 L429.649,156 Z"
+                      fill="#FFFFFF"></path>
+            </g>
+        </svg>
+    </div>
+    <h2>MineAdmin 安装</h2>
+    <p class="subtitle">专业的后台管理系统安装程序</p>
+
+    <!-- Step Dots -->
+    <div class="steps">
+        <span class="step-dot active" id="dot1"></span>
+        <span class="step-dot" id="dot2"></span>
+        <span class="step-dot" id="dot3"></span>
+        <span class="step-dot" id="dot4"></span>
+    </div>
+
+    <!-- ===== STEP 1: Environment Check ===== -->
+    <div id="s1">
+        <div class="form-area" id="s1-area"><div class="alert alert-info">正在检测系统环境...</div></div>
+        <button type="button" onclick="goStep(2)" id="btn-s1next" class="hidden" style="margin-top:10px;">下一步</button>
+    </div>
+
+    <!-- ===== STEP 2: Database Config ===== -->
+    <div id="s2" class="hidden">
+        <div class="form-area">
+            <div class="section-title">数据库配置</div>
+            <div id="db-alert"></div>
+
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>主机地址</label>
+                        <input type="text" id="db-host" value="localhost">
+                    </div>
+                    <div class="form-field">
+                        <label>端口</label>
+                        <input type="number" id="db-port" value="3306">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-field">
+                    <label>数据库名称 *</label>
+                    <input type="text" id="db-name" value="mineadmin" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>用户名</label>
+                        <input type="text" id="db-user" value="root">
+                    </div>
+                    <div class="form-field">
+                        <label>密码</label>
+                        <input type="password" id="db-pass">
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="testDB()" id="btn-test">测试连接</button>
+
+            <div id="db-overwrite" class="chk-group hidden">
+                <input type="checkbox" id="cb-overwrite" checked>
+                <label for="cb-overwrite">覆盖已存在的数据库（将清空所有数据）</label>
+            </div>
+
+            <button type="button" onclick="goStep(3)" id="btn-s2next" class="hidden" style="margin-top:10px;">下一步</button>
+        </div>
+    </div>
+
+    <!-- ===== STEP 3: System Settings ===== -->
+    <div id="s3" class="hidden">
+        <div class="form-area">
+            <div class="section-title">系统设置</div>
+
+            <div class="form-group">
+                <div class="form-field">
+                    <label>系统名称</label>
+                    <input type="text" id="app-name" value="MineAdmin">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-field">
+                    <label>系统地址</label>
+                    <input type="text" id="app-url" value="http://127.0.0.1:9501">
+                </div>
+            </div>
+
+            <div class="section-title">管理员账号</div>
+
+            <div class="form-group">
+                <div class="form-field">
+                    <label>管理员账号 *</label>
+                    <input type="text" id="adm-user" value="admin" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-field">
+                    <label>管理员密码 *</label>
+                    <input type="password" id="adm-pass" required>
+                </div>
+            </div>
+
+            <p class="note-text">安装过程将自动导入数据库结构和初始数据。</p>
+
+            <button type="button" onclick="startInstall()" id="btn-install" style="margin-top:16px;">开始安装</button>
+        </div>
+    </div>
+
+    <!-- ===== STEP 4: Progress & Result ===== -->
+    <div id="s4" class="hidden">
+        <!-- Progress -->
+        <div id="prog-area">
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span>正在安装...</span>
+                    <span id="prog-pct">0%</span>
+                </div>
+                <div class="progress-bar"><div class="fill" id="prog-fill"></div></div>
+            </div>
+            <div class="logs" id="log-area">
+                <div class="log-line"><span class="log-time">--:--:--</span><span class="log-lvl info">INFO</span><span class="log-msg">准备开始安装...</span></div>
+            </div>
+        </div>
+
+        <!-- Success -->
+        <div id="ok-area" class="page-result hidden">
+            <div class="result-icon success-icon">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <h3>安装完成！</h3>
+            <p>MineAdmin 已成功安装，现在可以开始使用了</p>
+
+            <div class="cred-card">
+                <h4>管理员登录信息</h4>
+                <div class="cred-row">
+                    <span class="label">用户名</span><span class="val" id="r-user">admin</span>
+                </div>
+                <div class="cred-row">
+                    <span class="label">密码</span><span class="val" id="r-pass">******</span>
+                </div>
+            </div>
+
+            <div style="background:#fffbea;border:1px solid #f59e0b;border-radius:4px;padding:14px;margin:20px 0;text-align:left;font-size:13px;color:#92400e;">
+                <strong>⚠ 重要提示：</strong>由于使用 Swoole 常驻内存模式运行，安装完成后需要重启服务才能生效。请在终端执行：
+                <code style="display:block;background:#f8fafc;padding:8px 12px;margin:6px 0 0;border-radius:3px;font-family:Monaco,Menlo,monospace;font-size:12.5px;color:#333;word-break:break-all;">pkill -f hyperf && php bin/hyperf.php start</code>
+            </div>
+
+            <a href="/" class="btn btn-primary" onclick="alert('请先重启服务：pkill -f hyperf && php bin/hyperf.php start');return false;" style="margin-bottom:8px;">访问后台管理系统（需先重启）</a>
+        </div>
+
+        <!-- Error -->
+        <div id="err-area" class="hidden">
+            <div class="alert alert-error" id="err-msg"></div>
+            <div class="logs" id="err-log"></div>
+            <button type="button" onclick="goStep(2)" class="btn btn-secondary" style="width:100%;margin-top:12px;">返回重新配置</button>
+        </div>
+    </div>
+
+    <!-- ===== Already Installed ===== -->
+    <div id="installed-page" class="hidden">
+        <div class="page-result">
+            <div class="result-icon installed-icon">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <h3>系统已安装</h3>
+            <p>MineAdmin 已成功安装，无需重复安装。</p>
+            <a href="/" class="btn btn-primary" style="width:auto;display:inline-block;padding:14px 40px;">返回首页</a>
+        </div>
+    </div>
+</div>
+
+<script>
+var API = '';
+var step = 1;
+
+function goStep(n) {
+    step = n;
+    for (var i = 1; i <= 4; i++) {
+        document.getElementById('s' + i).className = i === n ? '' : 'hidden';
+        var dot = document.getElementById('dot' + i);
+        dot.className = 'step-dot' + (i === n ? ' active' : i < n ? ' done' : '');
+    }
+}
+
+function fmt(d) { return d.toTimeString().split(' ')[0]; }
+function addLog(lv, msg) {
+    var c = document.getElementById('log-area');
+    var el = document.createElement('div');
+    el.className = 'log-line';
+    el.innerHTML = '<span class="log-time">'+fmt(new Date())+'</span><span class="log-lvl '+lv+'">'+lv.toUpperCase()+'</span><span class="log-msg">'+msg+'</span>';
+    c.appendChild(el);
+    c.scrollTop = c.scrollHeight;
+}
+function setProg(p) {
+    document.getElementById('prog-pct').textContent = p + '%';
+    document.getElementById('prog-fill').style.width = p + '%';
+}
+
+/* ---- Step 1: Env Check ---- */
+async function checkEnv() {
+    var area = document.getElementById('s1-area');
+    area.innerHTML = '<div class="alert alert-info">正在检测系统环境...</div>';
+
+    try {
+        var r = await fetch(API + '/admin/install/env');
+        var j = await r.json();
+        if (j.code !== 200) throw new Error(j.message || '检测失败');
+
+        var req = j.data.requirements, sm = j.data.summary;
+        var h = '<div class="req-section">';
+
+        // PHP
+        h += '<div class="req-section-title">PHP 环境</div><div class="req-grid">';
+        h += reqItem(req.php.name, req.php.version, req.php.passed ? 'pass' : 'fail');
+        for (var k in req.php_extensions)
+            h += reqItem(req.php_extensions[k].name, req.php_extensions[k].loaded ? '已加载' : '未加载',
+                req.php_extensions[k].required ? (req.php_extensions[k].passed ? 'pass' : 'fail') : 'warn');
+        h += '</div>';
+
+        // 目录权限
+        if (Object.keys(req.directories).length > 0) {
+            h += '<div class="req-section-title" style="margin-top:14px;">目录权限</div><div class="req-grid">';
+            for (k in req.directories)
+                h += reqItem(req.directories[k].name, req.directories[k].passed ? '可写' : '不可写',
+                    req.directories[k].passed ? 'pass' : 'fail');
+            h += '</div>';
+        }
+
+        // PHP 配置
+        if (Object.keys(req.php_config).length > 0) {
+            var hasFail = false;
+            for (k in req.php_config) { if (!req.php_config[k].passed && req.php_config[k].required) hasFail = true; }
+            if (hasFail) {
+                h += '<div class="req-section-title" style="margin-top:14px;">PHP 配置</div><div class="req-grid">';
+                for (k in req.php_config) {
+                    var cfg = req.php_config[k];
+                    if (!cfg.passed && cfg.required) h += reqItem(cfg.name, cfg.current, 'fail');
+                    else if (cfg.passed || cfg.required_check) h += reqItem(cfg.name, cfg.current, 'pass');
+                }
+                h += '</div>';
+            }
+        }
+
+        h += '</div>';
+        area.innerHTML = h;
+
+        if (sm.passed) {
+            document.getElementById('btn-s1next').classList.remove('hidden');
+        } else {
+            area.innerHTML += '<div class="alert alert-error">部分要求未满足：' + sm.errors.join('、') + '</div>';
+        }
+    } catch(e) {
+        area.innerHTML = '<div class="alert alert-error">检测出错: ' + e.message + '</div>';
+    }
+}
+function reqItem(name, val, st) {
+    var icon = st === 'pass' ? '&#10003;' : st === 'fail' ? '&#10007;' : '&#9888;';
+    var valHtml = val ? '<span class="r-val">('+val+')</span>' : '';
+    return '<div class="req-item"><span class="r-name">'+name+'</span>'+valHtml+'<span class="status-'+st+'">'+icon+'</span></div>';
+}
+
+/* ---- Step 2: Test DB ---- */
+async function testDB() {
+    var btn = document.getElementById('btn-test'), alertDiv = document.getElementById('db-alert');
+    var host = document.getElementById('db-host').value;
+    var port = document.getElementById('db-port').value;
+    var db   = document.getElementById('db-name').value.trim();
+    var user = document.getElementById('db-user').value;
+    var pass = document.getElementById('db-pass').value;
+
+    if (!db) { alertDiv.innerHTML = '<div class="alert alert-error">请输入数据库名称</div>'; return; }
+
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>测试中...';
+    alertDiv.innerHTML = '<div class="alert alert-info">正在连接数据库...</div>';
+
+    try {
+        var r = await fetch(API + '/admin/install/test-connection', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({host:host,port:port,database:db,username:user,password:pass}),
+            signal:AbortSignal.timeout(8000)
+        });
+        var j = await r.json();
+        if (j.code===200 && j.data && j.data.success) {
+            alertDiv.innerHTML = '<div class="alert alert-success">连接成功，数据库将在安装时自动创建。</div>';
+            document.getElementById('db-overwrite').classList.add('hidden');
+            document.getElementById('btn-s2next').classList.remove('hidden');
+            btn.innerHTML = '连接成功'; btn.disabled=false;
+        } else if (j.code===200 && j.data && j.data.database_exists) {
+            alertDiv.innerHTML = '<div class="alert alert-warning">数据库 "'+db+'" 已存在，请更换名称或勾选覆盖。</div>';
+            document.getElementById('db-overwrite').classList.remove('hidden');
+            document.getElementById('btn-s2next').classList.remove('hidden');
+            btn.innerHTML = '重新测试'; btn.disabled=false;
+        } else {
+            alertDiv.innerHTML = '<div class="alert alert-error">连接失败：'+(j.data&&j.data.message||j.message||'请检查设置')+'</div>';
+            btn.innerHTML = '重新测试'; btn.disabled=false;
+            document.getElementById('btn-s2next').classList.add('hidden');
+            document.getElementById('db-overwrite').classList.add('hidden');
+        }
+    } catch(e) {
+        var msg = e.name === 'TimeoutError' || (e.message && e.message.indexOf('timed out') !== -1)
+            ? '连接超时（8秒），可能是用户名或密码错误，或 MySQL 服务未启动'
+            : '请求失败: ' + e.message;
+        alertDiv.innerHTML = '<div class="alert alert-error">'+msg+'</div>';
+        btn.innerHTML = '重新测试'; btn.disabled=false;
+    }
+}
+
+/* ---- Step 3 -> 4: Install ---- */
+async function startInstall() {
+    var user = document.getElementById('adm-user').value.trim();
+    var pass = document.getElementById('adm-pass').value;
+    if(!user){ alert('请输入管理员账号'); return; }
+    if(!pass || pass.length<6){ alert('密码至少6位'); return; }
+
+    goStep(4);
+    document.getElementById('log-area').innerHTML = '';
+    document.getElementById('prog-area').classList.remove('hidden');
+    document.getElementById('ok-area').classList.add('hidden');
+    document.getElementById('err-area').classList.add('hidden');
+
+    addLog('info','开始安装 MineAdmin...'); setProg(5);
+
+    var cfg = {
+        host:document.getElementById('db-host').value,
+        port:document.getElementById('db-port').value,
+        database:document.getElementById('db-name').value.trim(),
+        username:document.getElementById('db-user').value,
+        password:document.getElementById('db-pass').value,
+        app_name:document.getElementById('app-name').value,
+        app_url:document.getElementById('app-url').value,
+        create_db:document.getElementById('cb-overwrite').checked,
+        run_migrations:true, seed_data:true,
+        admin_username:user, admin_password:pass
+    };
+
+    try {
+        var p = 5, timer = setInterval(function(){ if(p<90){p+=Math.random()*5;setProg(Math.round(p));} },500);
+        addLog('info','发送安装请求...'); setProg(10);
+
+        var ctrl2 = new AbortController();
+        var timer2 = setTimeout(function(){ ctrl2.abort(); }, 120000);
+        var r = await fetch(API+'/admin/install',{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(cfg), signal:ctrl2.signal});
+        clearTimeout(timer2);
+        var j = await r.json();
+        clearInterval(timer);
+
+        if(j.code===200){
+            setProg(100); addLog('success','安装完成！');
+            document.getElementById('prog-area').classList.add('hidden');
+            document.getElementById('ok-area').classList.remove('hidden');
+            document.getElementById('r-user').textContent=user;
+            document.getElementById('r-pass').textContent=pass;
+            document.getElementById('dot4').className='step-dot done';
+        }else{
+            throw new Error(j.message||'安装失败');
+        }
+    } catch(e) {
+        clearInterval(timer); clearTimeout(timer2);
+        var msg = e.name === 'AbortError' ? '安装超时（120秒），请稍后重试' : e.message;
+        setProg(0); addLog('error','安装失败: '+msg);
+        document.getElementById('prog-area').classList.add('hidden');
+        document.getElementById('err-area').classList.remove('hidden');
+        document.getElementById('err-msg').innerHTML='<strong>安装失败</strong><br>'+msg;
+        document.getElementById('err-log').innerHTML=document.getElementById('log-area').innerHTML;
+    }
+}
+
+/* ---- Init ---- */
+(function(){
+    fetch(API + '/admin/install/check')
+        .then(function(r){return r.json();})
+        .then(function(r){
+            if(r.code===200 && r.data && r.data.installed){
+                document.querySelectorAll('.steps')[0].style.display='none';
+                document.getElementById('s1').classList.add('hidden');
+                document.getElementById('installed-page').classList.remove('hidden');
+            } else {
+                checkEnv();
+            }
+        })
+        .catch(function(){
+            checkEnv();
+        });
+})();
+</script>
+</body>
+</html>
