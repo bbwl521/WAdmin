@@ -30,6 +30,11 @@ final class PluginGuardListener implements ListenerInterface
             return;
         }
 
+        // 系统未安装时跳过插件禁用检查
+        if (! file_exists(BASE_PATH . '/runtime/.install/install.lock')) {
+            return;
+        }
+
         $path = $event->request->getUri()->getPath();
         $disabledMap = $this->getDisabledMap();
 
