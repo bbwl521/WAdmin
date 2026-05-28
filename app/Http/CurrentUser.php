@@ -74,8 +74,13 @@ final class CurrentUser
                 ->getList(['status' => Status::Normal, 'name' => $permissions->toArray()])
                 ->toArray();
 
-        // 过滤已禁用插件相关的菜单
-        $disabledPlugins = Plugin::query()->where('status', 2)->pluck('code')->toArray();
+        // 系统未安装时跳过插件禁用检查
+        if (! file_exists(BASE_PATH . '/runtime/.install/install.lock')) {
+            $disabledPlugins = [];
+        } else {
+            // 过滤已禁用插件相关的菜单
+            $disabledPlugins = Plugin::query()->where('status', 2)->pluck('code')->toArray();
+        }
         if ($disabledPlugins !== []) {
             $menuList = array_values(array_filter($menuList, static function (array $menu) use ($disabledPlugins): bool {
                 foreach ($disabledPlugins as $code) {

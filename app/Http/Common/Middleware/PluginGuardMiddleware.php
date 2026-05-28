@@ -35,6 +35,11 @@ final class PluginGuardMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        // 系统未安装时跳过插件禁用检查
+        if (! file_exists(BASE_PATH . '/runtime/.install/install.lock')) {
+            return $handler->handle($request);
+        }
+
         $path = $request->getUri()->getPath();
 
         $pluginCode = $this->extractPluginCode($path);
