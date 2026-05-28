@@ -17,8 +17,9 @@ use Hyperf\Guzzle\ClientFactory;
 use Psr\Log\LoggerInterface;
 
 /**
- * 远程插件市场服务.
- * 远程 API 不可用时自动降级到本地数据库 (marketplace_plugin 表)。
+ * 插件市场服务（本地数据库版）.
+ * 数据查询全部走本地 marketplace_plugin 表，无远程调用。
+ * submit() 方法保留远程提交能力（开发者有意触发的操作）。
  */
 final class MarketplaceService
 {
@@ -35,71 +36,21 @@ final class MarketplaceService
         $this->timeout = (int) $config->get('plugin.marketplace_timeout', 5);
     }
 
-    /** 获取市场插件列表 */
+    /** 获取市场插件列表（仅本地数据库） */
     public function search(array $filters = []): array
     {
-        try {
-            $client = $this->clientFactory->create([
-                'base_uri' => $this->baseUrl,
-                'timeout' => $this->timeout,
-            ]);
-            $response = $client->get('/api/v1/plugins', [
-                'query' => array_filter([
-                    'search' => $filters['search'] ?? null,
-                    'category' => $filters['category'] ?? null,
-                    'page' => $filters['page'] ?? 1,
-                    'page_size' => $filters['page_size'] ?? 20,
-                ]),
-            ]);
-            $body = json_decode((string) $response->getBody(), true);
-            if (is_array($body)) {
-                return $body;
-            }
-        } catch (\Throwable $e) {
-            $this->logger->warning('[Marketplace] 远程搜索不可用: ' . $e->getMessage());
-        }
-
         return $this->mktService->search($filters);
     }
 
-    /** 获取插件详情 */
+    /** 获取插件详情（仅本地数据库） */
     public function detail(string $code): ?array
     {
-        try {
-            $client = $this->clientFactory->create([
-                'base_uri' => $this->baseUrl,
-                'timeout' => $this->timeout,
-            ]);
-            $response = $client->get("/api/v1/plugins/{$code}");
-            $body = json_decode((string) $response->getBody(), true);
-            if (is_array($body)) {
-                return $body;
-            }
-        } catch (\Throwable $e) {
-            $this->logger->warning("[Marketplace] 获取详情失败: {$code}");
-        }
-
         return $this->mktService->detail($code);
     }
 
-    /** 获取下载地址 */
+    /** 获取下载地址（仅本地数据库） */
     public function getDownloadUrl(string $code, string $version = ''): ?string
     {
-        try {
-            $client = $this->clientFactory->create([
-                'base_uri' => $this->baseUrl,
-                'timeout' => $this->timeout,
-            ]);
-            $query = $version !== '' ? ['version' => $version] : [];
-            $response = $client->get("/api/v1/plugins/{$code}/download", ['query' => $query]);
-            $body = json_decode((string) $response->getBody(), true);
-            if (is_array($body) && isset($body['url'])) {
-                return (string) $body['url'];
-            }
-        } catch (\Throwable $e) {
-            $this->logger->warning("[Marketplace] 获取下载地址失败: {$code}");
-        }
-
         return $this->mktService->getDownloadUrl($code);
     }
 
